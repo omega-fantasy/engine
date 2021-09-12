@@ -1,0 +1,163 @@
+cmake_minimum_required (VERSION 3.13)
+project (engine)
+add_executable(engine)
+add_subdirectory(src)
+
+if (UNIX)
+include_directories(. src)
+
+set(CMAKE_CXX_CPPCHECK 
+    cppcheck
+    -I ..;
+    -I .;
+    --enable=warning;
+    --platform=native;
+    --inconclusive;
+    --max-configs=1;
+    )
+
+set(CMAKE_CXX_CLANG_TIDY 
+    clang-tidy;
+    -extra-arg=-I..;
+    -extra-arg=-I.;
+    -checks='alpha*,clang-analyzer-*,bugprone-*,misc-*,-bugprone-integer-division,-bugprone-narrowing-conversions,-misc-definitions-in-headers,-misc-unused-using-decls,-clang-analyzer-cplusplus.NewDeleteLeaks,-misc-non-private-member-variables-in-classes,-misc-no-recursion;
+    -extra-arg=-std=c++17;
+    -header-filter=.*;)
+
+
+if (DBG)
+
+target_link_options(engine PRIVATE 
+    -fuse-ld=lld
+    -lSDL2 
+    -lSDL2_ttf
+    -lSDL2_mixer
+    -fsanitize=address 
+    -fsanitize=undefined
+    -fsanitize=bounds
+    #-fsanitize=leak 
+    -fsanitize=float-divide-by-zero 
+    -fsanitize=float-cast-overflow 
+    -fsanitize=integer
+    )
+
+target_compile_options(engine PRIVATE
+    -g3 
+    -fno-omit-frame-pointer
+    -O0
+    -std=c++17
+    -fno-exceptions
+    -fno-rtti
+    -Wpedantic
+    -Wall
+    -Wextra
+    -Wshadow
+    -Wnull-dereference
+    -Wunreachable-code
+    -Wuninitialized
+    -Wunused
+    -Waddress
+    -Warray-bounds
+    -Wdiv-by-zero
+    -Wenum-compare
+    -Wimplicit-fallthrough
+    -Walloca 
+    -Wformat=2
+    -Wformat-security
+    -Wstack-protector
+    -Wstrict-overflow=3
+    -Wvla
+    -fsanitize=address 
+    -fsanitize=undefined
+    -fsanitize=bounds
+    #-fsanitize=leak 
+    -fsanitize=float-divide-by-zero 
+    -fsanitize=float-cast-overflow 
+    -fsanitize=integer
+#    -fsanitize-no-recover
+#    -fsanitize=safe-stack 
+#    -fsanitize=bounds-strict 
+    #-fstack-protector-strong 
+    -fPIE 
+    -fstack-clash-protection
+)
+
+endif (DBG)
+
+if (OPT)
+
+target_compile_options(engine PRIVATE
+    -std=c++17
+#    -g3 
+    -fno-omit-frame-pointer
+    -fno-exceptions
+    -fno-rtti
+    -Ofast
+    -flto
+    -fstrict-vtable-pointers
+    -fwhole-program-vtables
+    -fforce-emit-vtables
+    -ffunction-sections
+    -fdata-sections
+    ) 
+
+target_link_options(engine PRIVATE 
+    -fuse-ld=lld
+    -lSDL2 
+    -lSDL2_ttf
+    -lSDL2_mixer
+    -flto
+    -Wl,-O3
+    -Wl,--gc-sections
+    -Wl,--strip-all 
+    -Wl,--icf=all  
+    -Wl,--lto-O3  
+    )
+
+endif (OPT)
+
+endif (UNIX)
+
+
+
+if (WIN32)
+
+include_directories(. ./SDL/include)
+
+add_custom_command(TARGET engine PRE_BUILD
+                   COMMAND ${CMAKE_COMMAND} -E copy_directory
+                   ${CMAKE_SOURCE_DIR}/SDL/lib .)
+add_custom_command(TARGET engine PRE_BUILD
+                   COMMAND ${CMAKE_COMMAND} -E copy_directory
+                   ${CMAKE_SOURCE_DIR}/res res)
+#add_custom_command(TARGET engine PRE_BUILD
+#                   COMMAND ${CMAKE_COMMAND} -E copy_directory
+#                   ${CMAKE_SOURCE_DIR}/config .)
+
+target_link_libraries(engine 
+	SDL2 
+	SDL2main 
+	SDL2_ttf 
+    SDL2_mixer
+)
+
+target_compile_options(engine PRIVATE 
+   /std:c++17
+   /GR-
+   /EHs-c-
+   /Ox
+   #/GL
+   #/Z7
+   #/ZI
+   #/Zi
+   #/Zo
+   #/EHsc
+)
+target_link_options(engine PRIVATE 
+   /LTCG
+   /SUBSYSTEM:windows
+   /ENTRY:mainCRTStartup
+   #/DEBUG
+)
+
+endif (WIN32)
