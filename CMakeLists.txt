@@ -125,8 +125,8 @@ if (WIN32)
 include_directories(. src)
 
 add_custom_command(TARGET engine POST_BUILD
-                   COMMAND ${CMAKE_COMMAND} -E copy_directory
-                   ./engine.exe ${CMAKE_SOURCE_DIR})
+                   COMMAND ${CMAKE_COMMAND} -E copy
+                   engine.exe ${CMAKE_SOURCE_DIR})
 #add_custom_command(TARGET engine PRE_BUILD
 #                   COMMAND ${CMAKE_COMMAND} -E copy_directory
 #                   ${CMAKE_SOURCE_DIR}/SDL/lib .)
@@ -138,10 +138,10 @@ add_custom_command(TARGET engine POST_BUILD
 #                   ${CMAKE_SOURCE_DIR}/config .)
 
 target_link_libraries(engine 
-	SDL2 
+	${CMAKE_SOURCE_DIR}/SDL2/SDL2.lib
 	#SDL2main 
-	SDL2_ttf 
-        SDL2_mixer
+	${CMAKE_SOURCE_DIR}/SDL2/SDL2_ttf.lib
+    ${CMAKE_SOURCE_DIR}/SDL2/SDL2_mixer.lib
 )
 
 target_compile_options(engine PRIVATE 
@@ -149,7 +149,7 @@ target_compile_options(engine PRIVATE
    /GR-
    /EHs-c-
    /Ox
-   #/GL
+   /GL
    #/Z7
    #/ZI
    #/Zi

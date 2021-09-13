@@ -1,9 +1,9 @@
 #ifndef SCREEN_H
 #define SCREEN_H
 
-#include "texture.h"
-#include "geometry.h"
 #include "engine.h"
+#include "texture.h"
+#include "config.h"
 #include <cstring>
 #include <vector>
 #include <chrono>
@@ -59,6 +59,9 @@ class Screen : public Composite {
         Screen(Size sz): Composite(sz) {
             SDL_Init(SDL_INIT_VIDEO);
             window = SDL_CreateWindow("", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, size.w, size.h, 0);
+            if (std::stoi(Engine.config()->get("settings")["resolution"]["fullscreen"])) {
+                SDL_SetWindowFullscreen(window, SDL_WINDOW_FULLSCREEN);
+            }
             pixels = static_cast<int*>(SDL_GetWindowSurface(window)->pixels);
         }
 

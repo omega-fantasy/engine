@@ -83,6 +83,7 @@ void BuildingsMenu::set_mode(BuildButton* button) {
         active_button->set_texture(texture_button_active);
         Engine.map()->set_cursor_texture(active_button->name);
     } else {
+        active_button = nullptr;
         Engine.map()->set_cursor_texture("");
     }
 } 
