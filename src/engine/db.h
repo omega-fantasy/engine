@@ -120,7 +120,7 @@ class Table : public TableBase {
         T& get(int key) {
             return *(T*)((char*)mem.data() + keyToIndex[key]);
         }
-
+        
         void erase(int key) {
             deletedIndices.push_back(keyToIndex[key]);
             keyToIndex.erase(keyToIndex.find(key));

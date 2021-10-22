@@ -8,6 +8,7 @@
 #include "audio.h"
 #include "sim.h"
 #include "config.h"
+#include "scene.h"
 
 GameEngine Engine;
 
@@ -24,6 +25,7 @@ void GameEngine::init(Size screen_size) {
     m_textures = new TextureManager();
     m_map = new Tilemap({0, 0});
     m_sim = new Simulation();
+    m_scenes = new ScenePlayer();
 }
         
 void GameEngine::save_state(const char* filename) {
@@ -37,6 +39,7 @@ void GameEngine::load_state(const char* filename) {
 
 void GameEngine::run() {
     while(1) {
+        m_scenes->handle_scenes();
         m_input->handleInputs();
         m_screen->draw();
         m_screen->update();

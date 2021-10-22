@@ -6,6 +6,7 @@
 #include "engine/audio.h"
 #include "engine/sim.h"
 #include "ui/hud.h"
+#include "system/system.h"
 
 class MapNavigate : public Input::Listener {
     public:
@@ -54,12 +55,12 @@ int main() {
     Engine.audio()->add_sound_folder("./res/sounds");
     //Engine.audio()->add_music_folder("./res/music");
     //Engine.audio()->play_music("music", 20);
+    System.init();
 
     double hud_width_per = 0.20;
     HUD* hud = new HUD({(double)(resolution.w * hud_width_per), (double)resolution.h});
     Engine.map()->create_map({(double)(resolution.w * (1-hud_width_per)), (double)resolution.h});
     Engine.map()->randomize_map();
-    Engine.db()->get_table<int>("cash")->add(0, std::stoi(Engine.config()->get("buildings")["startmoney"]));
 
     new MapNavigate();
     Engine.screen()->add_child(Engine.map(), {(int)hud->get_size().w, 0});

@@ -10,16 +10,7 @@
 
 class BuildingsMenu : public Composite, Tilemap::Listener {
     public:
-        class BuildButton : public Button {
-            public:
-                BuildButton(BuildingsMenu* p, const std::string& n, Size sz, int pr, bool ground);
-                void init();
-                void mouse_clicked(Point);
-                BuildingsMenu* parent;
-                std::string name;
-                int price;
-                bool is_ground;
-        };
+        class BuildButton;
         BuildingsMenu(const BuildingsMenu&) = delete;
         BuildingsMenu& operator= (const BuildingsMenu&) = delete;
         BuildingsMenu(Size sz);
@@ -29,7 +20,6 @@ class BuildingsMenu : public Composite, Tilemap::Listener {
         virtual void tile_clicked(Point p); 
         void draw();
         void init();
-        bool change_cash(int amount);
 
         BuildButton* active_button = nullptr;
         Texture* texture_button_default = new Texture(0xFFAA0000, {0.8 * size.w, 0.07 * size.h});

@@ -5,8 +5,21 @@
 #include "engine/ui.h"
 #include "engine/audio.h"
 #include "engine/sim.h"
+#include "system/simulate.h"
+#include "system/system.h"
 #include <ctime>
 #include <random>
+    
+class SimulateButton : public Button {
+    public:
+        SimulateButton(): Button({0, 0}, "Simulate") {}
+
+        void mouse_clicked(Point) {
+            set_text("Simulate: " + std::to_string(System.simulate()->date())); 
+            Engine.audio()->play_sound("menu1");
+            System.simulate()->run();
+        }
+};
 
 class TimeWidget : public Composite, Simulation::Event {
     class ToggleButton : public Button {

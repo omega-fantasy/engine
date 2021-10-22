@@ -16,6 +16,14 @@ class Input {
             //virtual void keyReleased(const std::string& /*key*/) {};
         };
 
+        void enable() {
+            disabled = false;
+        }
+
+        void disable() {
+            disabled = true;
+        }
+
         Point mouse_pos() {
             int mx, my;
             SDL_GetMouseState(&mx, &my);
@@ -39,6 +47,9 @@ class Input {
         }
 
         void handleInputs() {
+            if (disabled) {
+                return;
+            }
             SDL_Event event;
             while (SDL_PollEvent(&event)) {
                 switch (event.type) {
@@ -98,7 +109,8 @@ class Input {
         std::unordered_map<SDL_Keycode, Input::Listener*> presses;
         std::unordered_map<SDL_Scancode, Input::Listener*> holds;
         std::unordered_map<Input::Listener*, Box> clicks;
-        
+        bool disabled = false;
+
         void addKeyPressListener(Input::Listener* l, const std::string& key) {
             SDL_Keycode k = SDL_GetKeyFromName(key.c_str());
             if (key == "WheelUp") k = 1;

@@ -44,27 +44,34 @@ class Tilemap : public Composite, Input::Listener {
             Size s = texture->size() / tile_dim;  
             return set(texture->id(), p, s);
         }
-        
-        void unset_tile(Point p) {
+
+        Point texture_root(Point p) {
             Texture::ID id = tiles_above->get(p.x, p.y);
-            if (id > 0) {
-                Size s = Engine.textures()->get(id)->size() / tile_dim;
-                for (short y = p.y; y < p.y + s.h; y++) { 
-                    for (short x = p.x; x < p.x + s.w; x++) {
-                        if ((x == p.x && y == p.y) || tiles_above->get(x, y) < 0) {
-                            tiles_above->get(x, y) = 0;
-                        }
-                    }
-                }
-            } else if (id < 0) {
+            if (id < 0) {
                 Size s = Engine.textures()->get(-id)->size() / tile_dim;
                 for (short y = p.y; y > p.y - s.h && y >= 0; y--) { 
                     for (short x = p.x; x > p.x - s.w && x >= 0 ; x--) {
-                        id = tiles_above->get(x, y);
-                        if (id > 0) {
-                            unset_tile({x, y});
-                            return;
+                        Texture::ID current_id = tiles_above->get(x, y);
+                        if (current_id == -id) {
+                            return {x, y};
                         }
+                    }
+                }
+            }
+            return p;
+        }
+
+        void unset_tile(Point pos) {
+            Point p = texture_root(pos);
+            Texture::ID id = tiles_above->get(p.x, p.y);
+            if (id <= 0) {
+                return;
+            }
+            Size s = Engine.textures()->get(id)->size() / tile_dim;
+            for (short y = p.y; y < p.y + s.h; y++) { 
+                for (short x = p.x; x < p.x + s.w; x++) {
+                    if ((x == p.x && y == p.y) || tiles_above->get(x, y) < 0) {
+                        tiles_above->get(x, y) = 0;
                     }
                 }
             }
@@ -120,6 +127,7 @@ class Tilemap : public Composite, Input::Listener {
         Size tilemap_size() { return map_size; }
         Size tile_size() { return tile_dim; }
         float camera_zoom() { return zoom; }
+        void set_zoom(float z) { zoom = z; }
         BigPoint camera_position() { return camera_pos; }
         void add_listener(Tilemap::Listener* l) { click_listeners.push_back(l); }
         void remove_listener(Tilemap::Listener* l) { click_listeners.erase(std::find(click_listeners.begin(), click_listeners.end(), l)); }

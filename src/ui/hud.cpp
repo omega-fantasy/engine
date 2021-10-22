@@ -16,6 +16,9 @@ void HUD::init() {
     add_child(state_menu, {0.0, 0.85 * size.h - mini_map_size.h});
     BuildingsMenu* menu = new BuildingsMenu({size.w * 1.0, size.h * 0.5});
     add_child(menu, {0, 0});
-    TimeWidget* time_widget = new TimeWidget({size.w * 0.8, size.h * 0.08});
-    add_child(time_widget, {0.1 * size.w, 0.92 * size.h - mini_map_size.h - state_menu->get_size().h});
+//    TimeWidget* time_widget = new TimeWidget({size.w * 0.8, size.h * 0.08});
+//    add_child(time_widget, {0.1 * size.w, 0.92 * size.h - mini_map_size.h - state_menu->get_size().h});
+    SimulateButton* sim_widget = new SimulateButton();
+    sim_widget->set_texture(new Texture(0xFFAA0000, {size.w * 0.8, size.h * 0.05}));
+    add_child(sim_widget, {0.1 * size.w, 0.92 * size.h - mini_map_size.h - state_menu->get_size().h});
 }

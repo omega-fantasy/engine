@@ -10,6 +10,7 @@ class Screen;
 class AudioPlayer;
 class Simulation;
 class ConfigParser;
+class ScenePlayer;
 
 #include "geometry.h"
 
@@ -30,6 +31,7 @@ class GameEngine {
         AudioPlayer* audio() { return m_audio; }
         Simulation* sim() { return m_sim; }
         ConfigParser* config() { return m_config; }
+        ScenePlayer* scenes() { return m_scenes; }
 
     private:
         Input* m_input = nullptr;
@@ -40,6 +42,7 @@ class GameEngine {
         AudioPlayer* m_audio = nullptr;
         Simulation* m_sim = nullptr;
         ConfigParser* m_config = nullptr;
+        ScenePlayer* m_scenes = nullptr;
 };
 
 extern GameEngine Engine;

@@ -4,8 +4,7 @@
 #include "engine/engine.h"
 #include "engine/ui.h"
 #include "engine/audio.h"
-#include "engine/db.h"
-#include "engine/config.h"
+#include "system/system.h"
 
 class GameWidget : public Composite {
     public:
@@ -16,12 +15,11 @@ class GameWidget : public Composite {
         public:
             NewButton(): Button({0, 0}, "New Game") {}
             void mouse_clicked(Point) {
-                int startmoney =std::stoi(Engine.config()->get("buildings")["startmoney"]);
-                Engine.db()->get_table<int>("cash")->get(0) = startmoney;
                 Engine.map()->randomize_map();
                 Engine.screen()->set_update(true);
                 Engine.sim()->reset();
                 Engine.audio()->play_sound("menu2");
+                System.init();
             }
     };
     class SaveButton : public Button {
