@@ -43,6 +43,7 @@ class Text : public Composite {
 class Button : public Composite, Input::Listener {
     public:
         Button(Size sz, const std::string& text): Composite(sz), txt(text) { }
+        ~Button() { Engine.input()->remove_mouse_listener(this); }
 
         void set_texture(Texture* t) { 
             m_texture = t; 

@@ -5,7 +5,9 @@
 #include "engine/ui.h"
 #include "engine/input.h"
 #include "engine/tilemap.h"
+#include "system/buildings.h"
 #include <unordered_map>
+#include <algorithm>
 
 class MiniMap : public Composite, Input::Listener, Tilemap::Listener {
     public:
@@ -53,6 +55,13 @@ class MiniMap : public Composite, Input::Listener, Tilemap::Listener {
                     create_box(p1, p2, zoom);
                 }
                 Engine.screen()->blit(red_boxes[zoom], p1, Box(pos, size));
+            
+                auto table = Engine.db()->get_table<Buildings::Town>("towns");
+                for (auto it = table->begin(); it != table->end(); ++it) {
+                    Point p_town(it.key());
+                    Point p_dot = pos + Point(p_town.x / tiles_per_pixel.w, p_town.y / tiles_per_pixel.h);
+                    Engine.screen()->blit(texture_dot, p_dot, Box(pos, size));
+                }
                 set_update(false);
             }
         }
@@ -83,7 +92,8 @@ class MiniMap : public Composite, Input::Listener, Tilemap::Listener {
         }
 
     private:
-        std::unordered_map<float, Texture*> red_boxes; 
+        std::unordered_map<float, Texture*> red_boxes;
+        Texture* texture_dot = new Texture(0xFFFF00FF, {4, 4});
         bool listener_registered = false;
         bool recreate = true;
 };

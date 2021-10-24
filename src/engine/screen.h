@@ -7,6 +7,7 @@
 #include <cstring>
 #include <vector>
 #include <chrono>
+#include <algorithm>
 #include <SDL2/SDL.h>
 
 class Composite {
@@ -17,6 +18,8 @@ class Composite {
              child->pos = pos + offset;
              children.push_back(child);
          }
+         
+         virtual void remove_child(Composite* child) { std::remove(children.begin(), children.end(), child); }
 
          virtual void draw();
          virtual void init() {}

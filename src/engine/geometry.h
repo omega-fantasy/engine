@@ -18,7 +18,7 @@ struct Point {
     Point operator-(const Point& p) { return Point(x - p.x, y - p.y); }
     Point operator*(Point& p) { return Point(x * p.x, y * p.y); }
     Point operator/(Point& p) { return Point(x / p.x, y / p.y); }
-    bool operator==(Point& p) { return x == p.x && y == p.y; }
+    bool operator==(const Point& p) { return x == p.x && y == p.y; }
     bool operator!=(Point& p) { return x != p.x || y != p.y; }
     short distance(const Point& p) { return std::abs(x - p.x) + std::abs(y - p.y); }
     operator int() { return *((int*)this); }

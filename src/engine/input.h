@@ -40,6 +40,10 @@ class Input {
             }
         }
 
+        void remove_mouse_listener(Input::Listener* l) {
+            remove_list.push_back(l);
+        }
+
         void addMouseClickListener(Input::Listener* l, Box b) {
             if (clicks.find(l) == clicks.end()) {
                 clicks[l] = b;
@@ -103,12 +107,18 @@ class Input {
                     hold.second->key_pressed(SDL_GetScancodeName(hold.first));
                 }
             }
+                
+            for (auto l : remove_list) {
+                clicks.erase(l);
+            }
+            remove_list.clear();
         }
 
     private:
         std::unordered_map<SDL_Keycode, Input::Listener*> presses;
         std::unordered_map<SDL_Scancode, Input::Listener*> holds;
         std::unordered_map<Input::Listener*, Box> clicks;
+        std::vector<Input::Listener*> remove_list;
         bool disabled = false;
 
         void addKeyPressListener(Input::Listener* l, const std::string& key) {

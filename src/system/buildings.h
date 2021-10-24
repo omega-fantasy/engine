@@ -64,7 +64,7 @@ class Buildings {
             if (table->exists(p)) {
                 Town& town = table->get(p);
                 for (auto& b : town.buildings) {
-                    if (b.x < 0 || b.y < 0) break;
+                    if (b.x < 0 || b.y < 0 || b == p) break;
                     destroy(b);
                 }
                 table->erase(p);
