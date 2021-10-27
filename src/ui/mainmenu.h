@@ -2,14 +2,16 @@
 #define MAINMENU_H
 
 #include "ui/hud.h"
+#include "ui/textinputwidget.h"
 #include "engine/engine.h"
 #include "engine/tilemap.h"
 #include "engine/input.h"
 #include "engine/ui.h"
 #include "engine/audio.h"
 #include "system/system.h"
+#include "system/player.h"
 
-class MainMenu : public Composite {
+class MapScreen : public Composite {
     class MapNavigate : public Input::Listener {
         public:
             MapNavigate() {
@@ -46,20 +48,45 @@ class MainMenu : public Composite {
             int accel = 1;
             std::string key_up, key_down, key_left, key_right, key_zoomin, key_zoomout, key_quit;
     };
+    public:
 
+    MapScreen(): Composite({0, 0}) {
+        Size resolution = Engine.screen()->get_size();
+        double hud_width_per = 0.20;
+        HUD* hud = new HUD({(double)(resolution.w * hud_width_per), (double)resolution.h});
+        Engine.map()->create_map({(double)(resolution.w * (1-hud_width_per)), (double)resolution.h});
+        new MapNavigate();
+        Engine.screen()->add_child(Engine.map(), {(int)hud->get_size().w, 0});
+        Engine.screen()->add_child(hud, {0, 0});
+        Engine.screen()->set_update(true);
+    }
+};
+
+class MainMenu : public Composite, TextInputWidget::Listener {
   public:
     MainMenu(Size sz): Composite(sz) {}
+            
+    virtual void confirmed(TextInputWidget* widget) {
+        System.init();
+        System.player()->set_worldname(widget->current_text());
+        Engine.screen()->clear();
+        delete widget;
+        Engine.screen()->add_child(new MapScreen(), {0, 0});
+        Engine.map()->randomize_map();
+        delete this;
+    };
     
   private:
     class NewButton : public Button {
         public:
             NewButton(MainMenu* p): Button({0, 0}, "New Game"), parent(p) {}
             void mouse_clicked(Point) {
-                Engine.map()->randomize_map();
                 Engine.screen()->set_update(true);
                 Engine.audio()->play_sound("menu2");
-                System.init();
-                parent->start_game(true);
+                parent->unregister_buttons();
+                Engine.screen()->clear();
+                Size s = Engine.screen()->get_size();
+                Engine.screen()->add_child(new TextInputWidget({s.w * 0.75, s.h * 0.5}, "Enter the world's name:", parent), {s.w * 0.125, s.h * 0.25});
             }
             MainMenu* parent;
     };
@@ -72,7 +99,9 @@ class MainMenu : public Composite {
                 if (ifile) {
                     Engine.load_state("state.sav");
                     Engine.audio()->play_sound("menu2");
-                    parent->start_game(false);
+                    parent->unregister_buttons();
+                    Engine.screen()->clear();
+                    Engine.screen()->add_child(new MapScreen(), {0, 0});
                 }
             }
             MainMenu* parent;
@@ -89,25 +118,13 @@ class MainMenu : public Composite {
             ExitButton(): Button({0, 0}, "Quit") {}
             void mouse_clicked(Point) { exit(0); }
     };
-
-    void start_game(bool randomize) {
-        Size resolution = Engine.screen()->get_size();
-        double hud_width_per = 0.20;
-        HUD* hud = new HUD({(double)(resolution.w * hud_width_per), (double)resolution.h});
-        Engine.map()->create_map({(double)(resolution.w * (1-hud_width_per)), (double)resolution.h});
-        if (randomize) {
-            Engine.map()->randomize_map();
-        }
-        new MapNavigate();
-        Engine.screen()->remove_child(this);
+                
+    void unregister_buttons() {
         for (Button* b : buttons) {
-            delete b;
+            Engine.input()->remove_mouse_listener(b);
         }
-        children.clear();
-        Engine.screen()->add_child(Engine.map(), {(int)hud->get_size().w, 0});
-        Engine.screen()->add_child(hud, {0, 0});
     }
-    
+
     void init() {
         Texture* texture_button = new Texture(0xFF555555, {1.0 * size.w, 0.3 * size.h});
         for (int i = 0; i < 4; i++) {

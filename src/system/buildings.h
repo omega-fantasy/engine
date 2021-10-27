@@ -39,6 +39,7 @@ class Buildings {
                 }
             }
             Point buildings[MAX_BUILDINGS_PER_TOWN];
+            String<16> name = "";
         };
     
         Buildings() {
@@ -70,6 +71,13 @@ class Buildings {
                 table->erase(p);
             }
             Engine.map()->unset_tile(p);
+        }
+
+        void set_townname(Point p, const std::string& name) {
+            auto table = Engine.db()->get_table<Town>("towns");
+            if (table->exists(p)) {
+                table->get(p).name = name;
+            }
         }
 
         bool create_town(Point p) {

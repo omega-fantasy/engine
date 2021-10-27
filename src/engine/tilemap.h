@@ -315,7 +315,7 @@ class Tilemap : public Composite, Input::Listener {
 
         void draw() {
             if (!listener_registered) {
-                Engine.input()->addMouseClickListener(this, {pos, size});
+                Engine.input()->add_mouse_listener(this, {pos, size});
                 listener_registered = true;
             }
 

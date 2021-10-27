@@ -7,7 +7,6 @@
 #include <vector>
 #include <cstring>
 
-/*
 struct StringBase{};
 template<int N> struct String : StringBase {
     String() {}
@@ -27,7 +26,6 @@ template<int N> struct String : StringBase {
 using String8 = String<8>;
 using String16 = String<16>;
 using String32 = String<32>;
-*/
 
 class TableBase {
     public:

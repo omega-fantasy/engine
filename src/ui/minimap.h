@@ -40,7 +40,7 @@ class MiniMap : public Composite, Input::Listener, Tilemap::Listener {
                 recreate = false;
             }
             if (!listener_registered) {
-                Engine.input()->addMouseClickListener(this, {pos, size});
+                Engine.input()->add_mouse_listener(this, {pos, size});
                 Engine.map()->add_listener(this);
                 listener_registered = true;
             }

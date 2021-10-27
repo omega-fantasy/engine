@@ -25,6 +25,13 @@ class BuildingsMenu::BuildButton : public Button {
 };
 
 BuildingsMenu::BuildingsMenu(Size sz) : Composite(sz) {}
+        
+void BuildingsMenu::confirmed(TextInputWidget* widget) {
+    System.buildings()->set_townname(created_town, widget->current_text()); 
+    Engine.map()->remove_child(widget);
+    delete widget;
+    created_town = {-1, -1};
+}
 
 void BuildingsMenu::init() {
     Engine.map()->add_listener(this);
@@ -56,11 +63,20 @@ void BuildingsMenu::tile_clicked(Point p) {
             System.buildings()->destroy(p);
             sound = "destroy";
         } else if (active_button->name == "new town") {
-            sound = System.buildings()->create_town(p) && Engine.map()->set_tile("shop", p) ? "build" : "error";
+            bool success = System.buildings()->create_town(p) && Engine.map()->set_tile("shop", p);
+            sound = success ? "build" : "error";
+            if (success) {
+                Size s = {Engine.map()->get_size().w * 0.75, Engine.map()->get_size().h * 0.25};
+                TextInputWidget* name_input = new TextInputWidget(s, "Enter the town's name:", this);
+                Engine.map()->add_child(name_input, {Engine.map()->get_size().w * 0.125, Engine.map()->get_size().h * 0.375});
+                created_town = p;
+            }
         } else {
             sound = System.buildings()->create(active_button->name, p) ? "build" : "error";
         }
-        Engine.audio()->play_sound(sound);
+        if (sound == "build") {
+            set_mode(nullptr);
+        }
     }
 }
 
@@ -78,7 +94,7 @@ void BuildingsMenu::set_mode(BuildButton* button) {
         active_button->set_texture(texture_button_default);
     }
     Engine.audio()->play_sound("menu1");
-    if (active_button != button) {
+    if (button && active_button != button) {
         active_button = button;
         active_button->set_texture(texture_button_active);
         if (active_button->name == "new town") {

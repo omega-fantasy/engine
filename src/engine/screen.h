@@ -13,17 +13,21 @@
 class Composite {
     public:
          Composite(Size sz): size(sz) {}
+         virtual ~Composite() {
+             delete m_texture;
+         }
 
          virtual void add_child(Composite* child, Point offset) {
              child->pos = pos + offset;
              children.push_back(child);
          }
          
-         virtual void remove_child(Composite* child) { std::remove(children.begin(), children.end(), child); }
-
+         virtual void remove_child(Composite* child) {
+            children.erase(std::remove(children.begin(), children.end(), child), children.end()); 
+         }
+    
          virtual void draw();
          virtual void init() {}
-         virtual ~Composite() {}
 
          Size get_size() { return size; }
          int MAX_NO_UPDATES = 10;
@@ -68,6 +72,10 @@ class Screen : public Composite {
             pixels = static_cast<int*>(SDL_GetWindowSurface(window)->pixels);
         }
 
+        void clear() {
+            children.clear();
+            std::memset(pixels, 0, sizeof(int) * size.w * size.h); 
+        }
 
         void blit(Texture* texture, Point start, Box canvas, float zoom = 1) {
             Size texture_size = texture->size(zoom);
