@@ -26,6 +26,10 @@ class Text : public Composite {
         }
 
         void draw() {
+            if (!initialized) {
+                init();
+                initialized = true;
+            }
             if (needs_update()) {
                 if (m_texture) {
                     Engine.screen()->blit(m_texture, pos, Box(pos, size), 1);
@@ -37,7 +41,9 @@ class Text : public Composite {
                 }
                 set_update(false);
             }
-            Composite::draw();
+            for (auto& child : children) {
+                child->draw();
+            }
         }
 
         std::vector<Texture*> letters;
@@ -85,7 +91,7 @@ class Button : public Composite, public Input::Listener {
         Button(Size sz, const std::string& text): Composite(sz), txt(text) { }
         ~Button() { Engine.input()->remove_mouse_listener(this); }
 
-        void set_texture(Texture* t) { 
+        void set_texture(Texture* t) {
             m_texture = t; 
             size = t->size();
         }

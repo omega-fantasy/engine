@@ -52,7 +52,7 @@ class MapScreen : public Composite {
 
     MapScreen(): Composite({0, 0}) {
         Size resolution = Engine.screen()->get_size();
-        double hud_width_per = 0.20;
+        double hud_width_per = 0.25;
         HUD* hud = new HUD({(double)(resolution.w * hud_width_per), (double)resolution.h});
         Engine.map()->create_map({(double)(resolution.w * (1-hud_width_per)), (double)resolution.h});
         new MapNavigate();

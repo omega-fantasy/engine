@@ -25,6 +25,13 @@ class BuildingsMenu::BuildButton : public Button {
 };
 
 BuildingsMenu::BuildingsMenu(Size sz) : Composite(sz) {}
+BuildingsMenu::~BuildingsMenu() {
+    set_mode(nullptr);
+    for (auto child : children) {
+        delete child;
+    }
+    Engine.map()->remove_listener(this);
+}
         
 void BuildingsMenu::confirmed(TextInputWidget* widget) {
     System.buildings()->set_townname(created_town, widget->current_text()); 
@@ -41,16 +48,16 @@ void BuildingsMenu::init() {
     int i = children.size();
     Button* town_button = new BuildButton(this, "new town", {0, 0}, -1, true);
     add_child(town_button, Point(0.1 * size.w, i * 0.08 * size.h));
-    town_button->set_texture(texture_button_default);
+    town_button->set_texture(new Texture(color_default, button_size));
     i = children.size();
     Button* destroy_button = new BuildButton(this, "destroy", {0, 0}, -1, true);
     add_child(destroy_button, Point(0.1 * size.w, i * 0.08 * size.h));
-    destroy_button->set_texture(texture_button_default);
+    destroy_button->set_texture(new Texture(color_default, button_size));
 
     i = children.size();
     for (auto& button : System.buildings()->types()) {
         Button* b = new BuildButton(this, button.name, {0, 0}, button.price, false);
-        b->set_texture(texture_button_default);
+        b->set_texture(new Texture(color_default, button_size));
         add_child(b, Point(0.1 * size.w, i * 0.08 * size.h));
         i++;
     }
@@ -61,7 +68,6 @@ void BuildingsMenu::tile_clicked(Point p) {
         std::string sound;
         if (active_button->name == "destroy") {
             System.buildings()->destroy(p);
-            sound = "destroy";
         } else if (active_button->name == "new town") {
             bool success = System.buildings()->create_town(p) && Engine.map()->set_tile("shop", p);
             sound = success ? "build" : "error";
@@ -76,6 +82,8 @@ void BuildingsMenu::tile_clicked(Point p) {
         }
         if (sound == "build") {
             set_mode(nullptr);
+        } else {
+            Engine.audio()->play_sound(sound);
         }
     }
 }
@@ -91,12 +99,12 @@ void BuildingsMenu::draw() {
 
 void BuildingsMenu::set_mode(BuildButton* button) {
     if (active_button) {
-        active_button->set_texture(texture_button_default);
+        active_button->set_texture(new Texture(color_default, button_size));
     }
     Engine.audio()->play_sound("menu1");
     if (button && active_button != button) {
         active_button = button;
-        active_button->set_texture(texture_button_active);
+        active_button->set_texture(new Texture(color_active, button_size));
         if (active_button->name == "new town") {
             Engine.map()->set_cursor_texture("shop");
         } else {

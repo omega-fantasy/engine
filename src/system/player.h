@@ -21,6 +21,10 @@ class Player {
         table->get(0).cash = startmoney;
     }
 
+    std::string worldname() {
+        return Engine.db()->get_table<Entity>("player")->get(0).worldname.toStdString();
+    }
+
     void set_worldname(const std::string& name) {
         Engine.db()->get_table<Entity>("player")->get(0).worldname = name;
     }

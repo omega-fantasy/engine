@@ -80,6 +80,15 @@ class Buildings {
             }
         }
 
+        std::vector<std::pair<std::string, Point>> townlist() {
+            std::vector<std::pair<std::string, Point>> ret;
+            auto table = Engine.db()->get_table<Town>("towns");
+            for (auto it = table->begin(); it != table->end(); ++it) {
+                ret.push_back({(*it).name.toStdString(), it.key()});
+            }
+            return ret;
+        }
+
         bool create_town(Point p) {
             auto table = Engine.db()->get_table<Town>("towns");
             for (auto it = table->begin(); it != table->end(); ++it) {

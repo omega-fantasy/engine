@@ -12,10 +12,8 @@
     
 class SimulateButton : public Button {
     public:
-        SimulateButton(): Button({0, 0}, "Simulate") {}
-
+        SimulateButton(): Button({0, 0}, "Next Turn") {}
         void mouse_clicked(Point) {
-            set_text("Simulate: " + std::to_string(System.simulate()->date())); 
             Engine.audio()->play_sound("menu1");
             System.simulate()->run();
         }

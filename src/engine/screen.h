@@ -13,9 +13,7 @@
 class Composite {
     public:
          Composite(Size sz): size(sz) {}
-         virtual ~Composite() {
-             delete m_texture;
-         }
+         virtual ~Composite() {}
 
          virtual void add_child(Composite* child, Point offset) {
              child->pos = pos + offset;

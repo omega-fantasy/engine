@@ -15,6 +15,7 @@ class BuildingsMenu : public Composite, Tilemap::Listener, TextInputWidget::List
         BuildingsMenu(const BuildingsMenu&) = delete;
         BuildingsMenu& operator= (const BuildingsMenu&) = delete;
         BuildingsMenu(Size sz);
+        ~BuildingsMenu();
         void set_mode(BuildButton* button); 
         void confirmed(TextInputWidget*);
 
@@ -24,8 +25,9 @@ class BuildingsMenu : public Composite, Tilemap::Listener, TextInputWidget::List
         void init();
 
         BuildButton* active_button = nullptr;
-        Texture* texture_button_default = new Texture(0xFFAA0000, {0.8 * size.w, 0.07 * size.h});
-        Texture* texture_button_active = new Texture(0xFFAAAA00, {0.8 * size.w, 0.07 * size.h});
+        unsigned color_default = 0xFFAA0000;
+        unsigned color_active = 0xFFAAAA00;
+        Size button_size = {0.8 * size.w, 0.07 * size.h};
         Text* text_cash = nullptr;
         Point created_town = {-1, -1};
 };
