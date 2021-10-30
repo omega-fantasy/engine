@@ -1,6 +1,7 @@
 #ifndef SIMULATE_H
 #define SIMULATE_H
 
+/*
 #include "buildings.h"
 #include "engine/scene.h"
 #include "engine/tilemap.h"
@@ -78,5 +79,6 @@ class Simulate : public Scene {
     int cycles = 0;
     std::queue<Point> towns;
 };
+*/
 
 #endif

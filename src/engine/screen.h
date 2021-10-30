@@ -12,6 +12,11 @@
 
 class Composite {
     public:
+         class Listener {
+              public:
+              virtual void fade_completed(Composite*) = 0; 
+         };
+
          Composite(Size sz): size(sz) {}
          virtual ~Composite() {}
 
@@ -31,23 +36,32 @@ class Composite {
          int MAX_NO_UPDATES = 10;
          
          virtual void set_update(bool update) {
-             if (update) {
-                 update_count = MAX_NO_UPDATES;
-             } else {
-                 update_count = 0;
-             }
+             update_count = update ? MAX_NO_UPDATES : 0;
              for (auto& child : children) {
                  child->set_update(true);
              }
          }
 
-    protected:
-         bool initialized = false;
-         Point pos = {0, 0};
-         Size size;
-         Texture* m_texture = nullptr;
-         std::vector<Composite*> children;
-         int update_count = 0;
+         void set_overlay(unsigned color, int num_frames, Listener* listener = nullptr) {
+            overlay_listener = listener;
+            if (!m_overlay) {
+                m_overlay = new Texture(0x0, size);
+                m_overlay->set_transparent(true);
+            }
+            Color target_color;
+            target_color.value = color;
+            Color old_color;
+            old_color.value = static_cast<unsigned>(m_overlay->pixels()[0]); 
+            for (int i = num_frames; i > 0; i--) {
+                Color new_color;
+                for (int j = 0; j < 4; j++) {
+                    new_color.pixel[j] = old_color.pixel[j];
+                    new_color.pixel[j] += ((double)i / num_frames) * (target_color.pixel[j] - old_color.pixel[j]);
+                }
+                overlay_colors.push_back(new_color.value);
+            }
+         }
+         
          bool needs_update() {
              if (update_count < MAX_NO_UPDATES) {
                 update_count++;
@@ -57,6 +71,18 @@ class Composite {
              update_count = 0;
              return true;
          }
+
+    protected:
+         union Color { unsigned value; unsigned char pixel[4]; };
+         std::vector<unsigned> overlay_colors;
+         Listener* overlay_listener = nullptr;
+         Texture* m_overlay = nullptr;
+         bool initialized = false;
+         Point pos = {0, 0};
+         Size size;
+         Texture* m_texture = nullptr;
+         std::vector<Composite*> children;
+         int update_count = 0;
 };
 
 class Screen : public Composite {
@@ -184,6 +210,28 @@ inline void Composite::draw() {
     }
     for (auto& child : children) {
         child->draw();
+    }
+    if (!overlay_colors.empty()) {
+        Color new_color;
+        new_color.value = overlay_colors.back();
+        int* pixels = m_overlay->pixels();
+        for (int i = 0; i < m_overlay->size().w * m_overlay->size().h; i++) {
+            pixels[i] = static_cast<int>(new_color.value);
+        }
+        overlay_colors.pop_back();
+        if (overlay_colors.empty()) {
+            if (new_color.pixel[3] == 0) {
+                delete m_overlay;
+                m_overlay = nullptr;
+            }
+            if (overlay_listener) {
+                overlay_listener->fade_completed(this);
+            }
+        }
+    }
+    if (m_overlay) {
+        Engine.screen()->blit(m_overlay, pos, Box(pos, size), 1);
+        set_update(true);
     }
 }
 

@@ -11,7 +11,7 @@
 #include "system/system.h"
 #include "system/player.h"
 
-class MapScreen : public Composite {
+class MapScreen : public Composite, public Composite::Listener {
     class MapNavigate : public Input::Listener {
         public:
             MapNavigate() {
@@ -60,23 +60,38 @@ class MapScreen : public Composite {
         Engine.screen()->add_child(hud, {0, 0});
         Engine.screen()->set_update(true);
     }
+    
+    virtual void fade_completed(Composite*) {
+        Engine.input()->enable();
+    }
 };
 
-class MainMenu : public Composite, TextInputWidget::Listener {
+class MainMenu : public Composite, TextInputWidget::Listener, Composite::Listener {
   public:
     MainMenu(Size sz): Composite(sz) {}
-            
-    virtual void confirmed(TextInputWidget* widget) {
-        System.init();
-        System.player()->set_worldname(widget->current_text());
+    
+    virtual void fade_completed(Composite*) {
         Engine.screen()->clear();
-        delete widget;
-        Engine.screen()->add_child(new MapScreen(), {0, 0});
+        System.init();
+        System.player()->set_worldname(m_widget->current_text());
+        delete m_widget;
+        Engine.input()->disable();
+        auto map_screen = new MapScreen();
+        Engine.screen()->add_child(map_screen, {0, 0});
         Engine.map()->randomize_map();
+        Engine.screen()->set_overlay(0x00000000, 360, map_screen);
         delete this;
+    }   
+
+    virtual void confirmed(TextInputWidget* widget) {
+        m_widget = widget;
+        Engine.screen()->set_overlay(0xFF000000, 120, this);
+        Engine.input()->disable();
     };
     
   private:
+    TextInputWidget* m_widget = nullptr;
+
     class NewButton : public Button {
         public:
             NewButton(MainMenu* p): Button({0, 0}, "New Game"), parent(p) {}

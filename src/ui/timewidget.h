@@ -4,21 +4,60 @@
 #include "engine/engine.h"
 #include "engine/ui.h"
 #include "engine/audio.h"
-#include "engine/sim.h"
-#include "system/simulate.h"
+#include "engine/db.h"
+#include "system/player.h"
 #include "system/system.h"
-#include <ctime>
-#include <random>
     
-class SimulateButton : public Button {
+class SimulateButton : public Button, public Composite::Listener {
     public:
         SimulateButton(): Button({0, 0}, "Next Turn") {}
+        
+        virtual void fade_completed(Composite*) {
+            if (dark) {
+                Engine.map()->set_zoom(1.0);
+                Point current = towns.back();
+                Engine.map()->move_cam_to_tile(current);
+                Engine.screen()->set_overlay(0x00000000, 120, this);
+                dark = false;
+            } else {
+                Point current = towns.back();
+                towns.pop_back();
+                Engine.audio()->play_sound("menu2");
+                auto& town = Engine.db()->get_table<Buildings::Town>("towns")->get(current);
+                for (auto& building : town.buildings) {
+                    if (building.x < 0 || building.y < 0) {
+                        break;
+                    }
+                    System.player()->change_cash(100);
+                }
+                if (!towns.empty()) {
+                    Engine.screen()->set_overlay(0xFF000000, 120, this);
+                    dark = true;
+                } else {
+                    Engine.input()->enable();
+                }
+            }
+        }
+
         void mouse_clicked(Point) {
             Engine.audio()->play_sound("menu1");
-            System.simulate()->run();
+            towns.clear();
+            auto town_table = Engine.db()->get_table<Buildings::Town>("towns");
+            for (auto it = town_table->begin(); it != town_table->end(); ++it) {
+                towns.push_back(it.key());
+            }
+            if (!towns.empty()) {
+                Engine.input()->disable();
+                Engine.screen()->set_overlay(0xFF000000, 120, this);
+                dark = true;
+            }
         }
+
+        std::vector<Point> towns;
+        bool dark = false;
 };
 
+/*
 class TimeWidget : public Composite, Simulation::Event {
     class ToggleButton : public Button {
         public:
@@ -91,5 +130,6 @@ class TimeWidget : public Composite, Simulation::Event {
     Text* text_time = nullptr;
     int advance_sim = 0;
 };
+*/
 
 #endif

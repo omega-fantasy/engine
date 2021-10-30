@@ -14,8 +14,10 @@ void GameSystem::init() {
         delete m_buildings;
     }
     m_buildings = new Buildings();
+    /*
     if (m_simulate) {
         delete m_simulate;
     }
     m_simulate = new Simulate();
+    */
 }
