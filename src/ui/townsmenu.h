@@ -30,7 +30,7 @@ class TownsMenu : public Composite {
 
     class WorldName : public Text {
         public:
-            WorldName(const std::string& name, Size s): Text("World: " + name, 0.8 * s.h) {}
+            WorldName(const std::string& name, Size s): Text("World: " + name, 0.8 * s.h, s) {}
             void init() { m_texture = new Texture(0xFF555555, {size.w, size.h}); }
     };
 

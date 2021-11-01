@@ -49,7 +49,7 @@ class TextInputWidget : public Composite {
 
     void init() {
         Engine.input()->disable();
-        title_text = new Text(title, 0.15 * size.h);
+        title_text = new Text(title, 0.15 * size.h, {1.0 * size.w, 0.2 * size.h});
         add_child(title_text, {0.0 * size.w, 0.0 * size.h});
         input = new TextInput(12, {1.0 * size.w, 0.2 * size.h});
         add_child(input, {0.0 * size.w, 0.33 * size.h});

@@ -20,6 +20,9 @@ class Composite {
          Composite(Size sz): size(sz) {}
          virtual ~Composite() {}
 
+         virtual std::vector<Composite*> get_children() { return children; }
+         virtual void set_size(Size s) { size = s; }
+
          virtual void add_child(Composite* child, Point offset) {
              child->pos = pos + offset;
              children.push_back(child);

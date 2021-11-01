@@ -3,6 +3,7 @@
 
 #include "ui/hud.h"
 #include "ui/textinputwidget.h"
+#include "ui/messagebox.h"
 #include "engine/engine.h"
 #include "engine/tilemap.h"
 #include "engine/input.h"
@@ -11,7 +12,7 @@
 #include "system/system.h"
 #include "system/player.h"
 
-class MapScreen : public Composite, public Composite::Listener {
+class MapScreen : public Composite, public Composite::Listener, public MessageBox::Listener {
     class MapNavigate : public Input::Listener {
         public:
             MapNavigate() {
@@ -60,9 +61,17 @@ class MapScreen : public Composite, public Composite::Listener {
         Engine.screen()->add_child(hud, {0, 0});
         Engine.screen()->set_update(true);
     }
+
+    virtual void confirmed(MessageBox* messagebox) {
+        Engine.map()->remove_child(messagebox);
+        delete messagebox;
+    }
     
     virtual void fade_completed(Composite*) {
-        Engine.input()->enable();
+        Size s = Engine.map()->get_size();
+        std::string text = "Welcome to the world of " + System.player()->worldname() + "! This is just an example text to ensure that text boxes are working correctly... Press Enter to continue with the game!";
+        auto messagebox = new MessageBox({1.0 * s.w, 0.35 * s.h}, text, this);
+        Engine.map()->add_child(messagebox, {0.0 * s.w, 0.65 * s.h});
     }
 };
 
@@ -79,7 +88,7 @@ class MainMenu : public Composite, TextInputWidget::Listener, Composite::Listene
         auto map_screen = new MapScreen();
         Engine.screen()->add_child(map_screen, {0, 0});
         Engine.map()->randomize_map();
-        Engine.screen()->set_overlay(0x00000000, 360, map_screen);
+        Engine.screen()->set_overlay(0x00000000, 120, map_screen);
         delete this;
     }   
 

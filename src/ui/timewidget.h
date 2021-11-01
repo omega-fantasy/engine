@@ -1,6 +1,7 @@
 #ifndef TIMEWIDGET_H
 #define TIMEWIDGET_H
 
+#include "ui/messagebox.h"
 #include "engine/engine.h"
 #include "engine/ui.h"
 #include "engine/audio.h"
@@ -8,13 +9,41 @@
 #include "system/player.h"
 #include "system/system.h"
     
-class SimulateButton : public Button, public Composite::Listener {
+class SimulateButton : public Button, public Composite::Listener, public MessageBox::Listener {
     public:
         SimulateButton(): Button({0, 0}, "Next Turn") {}
-        
+
+        virtual void confirmed(MessageBox* messagebox) {
+            delete messagebox;
+            Engine.map()->remove_child(messagebox);
+            if (!towns.empty()) {
+                Engine.screen()->set_overlay(0xFF000000, 120, this);
+                dark = true;
+                Engine.input()->disable(); // deleting msgbox enalbes it...
+            } else {
+                Engine.input()->enable();
+            }
+        }
+
         virtual void fade_completed(Composite*) {
-            if (dark) {
+            if (first_dark) {
                 Engine.map()->set_zoom(1.0);
+                /*
+                Composite* map = Engine.map();
+                Composite* hud = nullptr;
+                for (auto child : Engine.screen()->get_children()) {
+                    if (child != map) {
+                        hud = child;
+                    }
+                }
+                Engine.screen()->clear();
+                first_dark = false;
+                map->set_size(Engine.screen()->get_size());
+                Engine.screen()->add_child(map, {0, 0});
+                */
+            }
+
+            if (dark) {
                 Point current = towns.back();
                 Engine.map()->move_cam_to_tile(current);
                 Engine.screen()->set_overlay(0x00000000, 120, this);
@@ -30,12 +59,10 @@ class SimulateButton : public Button, public Composite::Listener {
                     }
                     System.player()->change_cash(100);
                 }
-                if (!towns.empty()) {
-                    Engine.screen()->set_overlay(0xFF000000, 120, this);
-                    dark = true;
-                } else {
-                    Engine.input()->enable();
-                }
+                Size s = Engine.map()->get_size();
+                std::string text = "This is the town of " + town.name.toStdString() + "!";
+                auto messagebox = new MessageBox({1.0 * s.w, 0.35 * s.h}, text, this);
+                Engine.map()->add_child(messagebox, {0.0 * s.w, 0.65 * s.h});
             }
         }
 
@@ -50,11 +77,13 @@ class SimulateButton : public Button, public Composite::Listener {
                 Engine.input()->disable();
                 Engine.screen()->set_overlay(0xFF000000, 120, this);
                 dark = true;
+                first_dark = true;
             }
         }
 
         std::vector<Point> towns;
         bool dark = false;
+        bool first_dark = false;
 };
 
 /*

@@ -8,19 +8,43 @@
 
 class Text : public Composite {
     public:
-        Text(const std::string& txt, short txt_height): Composite({0, 0}) {
+        Text(const std::string& txt, short txt_height, Size sz): Composite(sz) {
             set_text(txt, txt_height);
         }
 
-        void set_text(const std::string& txt, short txt_size) {
-            letters.clear();
-            size = {0, 0};
-            for (auto& letter : txt) {
-                Texture* t = Engine.textures()->get(letter, txt_size);
-                letters.push_back(t);
-                size.w += t->size().w;
-                if (t->size().h > size.h) { 
-                    size.h = t->size().h;
+        void set_text(const std::string& txt, short txt_height) {
+            lines.clear();
+            lines.resize(1);
+            std::vector<Texture*> word;
+            int current_line = 0;
+            short word_length = 0;
+            short line_length = 0;
+            short line_height = 0;
+            short total_height = 0;
+
+            for (int i = 0; i < (int)txt.size(); i++) {
+                Texture* t = Engine.textures()->get(txt[i], txt_height);
+                word.push_back(t);
+                word_length += t->size().w;
+                line_height = t->size().h > line_height ? t->size().h : line_height;
+                if (txt[i] == ' ' || i == (int)(txt.size()-1)) {
+                    if (line_length + word_length < size.w) {
+                        lines[current_line].insert(lines[current_line].end(), word.begin(), word.end());
+                        line_length += word_length;
+                    } else {
+                        total_height += line_height;
+                        if (total_height + line_height > size.h) { 
+                            std::cout << "Text too long!" << std::endl;
+                            // add excess text handling here
+                            break;
+                        }
+                        lines.push_back(word);
+                        line_length = word_length;
+                        line_height = 0;
+                        current_line++;
+                    }
+                    word.clear();
+                    word_length = 0;
                 }
             }
         }
@@ -34,10 +58,16 @@ class Text : public Composite {
                 if (m_texture) {
                     Engine.screen()->blit(m_texture, pos, Box(pos, size), 1);
                 }
-                Point p = pos; 
-                for (auto& letter : letters) {
-                    Engine.screen()->blit(letter, p, Box(p, letter->size()));
-                    p.x += letter->size().w;
+                Point p = pos;
+                for (auto& line : lines) {
+                    short line_height = 0;
+                    for (auto& letter : line) {
+                        Engine.screen()->blit(letter, p, Box(pos, size));
+                        p.x += letter->size().w;
+                        line_height = letter->size().h > line_height ? letter->size().h : line_height;
+                    }
+                    p.x = pos.x;
+                    p.y += line_height;
                 }
                 set_update(false);
             }
@@ -46,12 +76,12 @@ class Text : public Composite {
             }
         }
 
-        std::vector<Texture*> letters;
+        std::vector<std::vector<Texture*>> lines;
 };
 
 class TextInput : public Text, public Input::Listener {
     public:
-        TextInput(unsigned short max_length, Size sz): Text("|", 0.8 * sz.h), max(max_length) {
+        TextInput(unsigned short max_length, Size sz): Text("|", 0.8 * sz.h, sz), max(max_length) {
             size = sz;
             m_texture = new Texture(0x0, size); 
             MAX_NO_UPDATES = 1;
@@ -101,7 +131,7 @@ class Button : public Composite, public Input::Listener {
         void draw() {
             if (!listener_registered) {
                 if (!txt.empty()) {
-                    text_composite = new Text(txt, size.h * 0.5);
+                    text_composite = new Text(txt, size.h * 0.5, size);
                     add_child(text_composite, Point(10, 10));
                 }
                 Engine.input()->add_mouse_listener(this, {pos, size});

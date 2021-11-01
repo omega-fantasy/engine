@@ -42,7 +42,7 @@ void BuildingsMenu::confirmed(TextInputWidget* widget) {
 
 void BuildingsMenu::init() {
     Engine.map()->add_listener(this);
-    text_cash = new Text(std::to_string(System.player()->current_cash()) + " Gil", 0.05 * size.h);
+    text_cash = new Text(std::to_string(System.player()->current_cash()) + " Gil", 0.05 * size.h, {0.6 * size.w, 0.1 * size.h});
     add_child(text_cash, {0.3 * size.w, 0.0});
     
     int i = children.size();
