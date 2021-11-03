@@ -218,9 +218,7 @@ inline void Composite::draw() {
         Color new_color;
         new_color.value = overlay_colors.back();
         int* pixels = m_overlay->pixels();
-        for (int i = 0; i < m_overlay->size().w * m_overlay->size().h; i++) {
-            pixels[i] = static_cast<int>(new_color.value);
-        }
+        std::fill(pixels, pixels + m_overlay->size().w * m_overlay->size().h, (int)new_color.value);
         overlay_colors.pop_back();
         if (overlay_colors.empty()) {
             if (new_color.pixel[3] == 0) {

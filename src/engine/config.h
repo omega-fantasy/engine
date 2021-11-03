@@ -19,6 +19,7 @@ class ConfigParser {
         auto end() { return std::get<2>(val).end(); }
         Node& operator[](const std::string& key) { return std::get<1>(val)[key];}
         operator std::string() const { return std::get<0>(val); }
+        operator std::vector<Node>() const { return std::get<2>(val); }
 
         Node() { assert(false); }
         Node(std::ifstream& stream) {
