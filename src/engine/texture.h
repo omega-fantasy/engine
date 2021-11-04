@@ -26,11 +26,11 @@ class Texture {
         Texture(const Texture&) = delete;
         Texture& operator=(const Texture&) = delete;
         
-        Texture(unsigned color, Size s) {
+        Texture(Color color, Size s) {
             m_id = 0;
             pixels_og = new int[s.w * s.h];
             for (int i = 0; i < s.w * s.h; i++) {
-                pixels_og[i] = static_cast<int>(color);         
+                pixels_og[i] = color;         
             }
             width = s.w;
             height = s.h;
@@ -72,7 +72,7 @@ class Texture {
         ID id() { return m_id; }
         void set_id(ID i) { m_id = i; }
 
-    private:
+    protected:
         ID m_id;
         std::string m_name;
         std::vector<int*> pixels_zoomin;

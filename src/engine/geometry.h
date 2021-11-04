@@ -61,77 +61,29 @@ struct Box {
     bool inside(Point p) { return p.x >= a.x && p.y >= a.y && p.x <= b.x && p.y <= b.y; }
 };
 
-/*
-struct PathElement {
-    Point pos;
-    short g;
-    short f;
+struct Color {
+    Color() {}
+    Color(unsigned char r, unsigned char g, unsigned char b, unsigned char a=255): red(r), green(g), blue(b), alpha(a) {}
+    Color(unsigned u) { *this = u; }
+    Color operator-(unsigned char d) { return Color(blue > d ? blue - d : 0, green > d ? green - d : 0, red > d ? red - d : 0, alpha); }
+    Color& operator=(int i) { *((int*)this) = i; return *this; } 
+    Color& operator=(unsigned u) { *((unsigned*)this) = u; return *this; } 
+    Color& operator=(Color c) { *((unsigned*)this) = unsigned(c); return *this; } 
+    operator int() { return *((int*)this); }
+    operator unsigned() { return *((unsigned*)this); }
+    unsigned char& operator[](int i) {
+        switch (i) {
+            case 0: return red;
+            case 1: return green;
+            case 2: return blue;
+            case 3: return alpha;
+            default: return red;
+        }
+    }
+    unsigned char blue;
+    unsigned char green;
+    unsigned char red;
+    unsigned char alpha;
 };
 
-int path_length(Point src, Point dst, int maxlen, int roadid) {
-        auto& map = Engine.db()->get_matrix<Texture::ID>("tiles");
-        std::priority_queue<Point> pqueue;
-        
-        Texture::ID id = map.get(src.x, src.y);
-        std::vector<PathElement> start_tiles;
-        if (id != roadid) {
-            Size s = Engine.textures()->get(id)->size() / tile_dim;
-            for (short y = src.y-1 > 0 ? src.y-1 : 0; y < map_size.h && y < src.y+s.h+1; y++) { 
-                for (short x = src.x-1 > 0 ? src.x-1 : 0; x < map_size.w && x < src.x+s.w+1; x++) { 
-                    if (map.get(x, y) == roadid) {
-                        short d = dst.distance({x, y}) + 1;
-                        if (d == 2) {
-                            return 1;
-                        }
-                        pqueue.emplace_back({x, y}, d);
-                    }
-                }
-            }
-        } else {
-            pqueue.emplace_back(src, 1, dst.distance(src) + 1, true);
-        }
-
-        std::unordered_set<Point> openset, closedset;
-
-        while (!pqueue.empty()) {
-            auto& pop = pqueue.pop();
-            pop.open = false;
-            if (pop->g >= maxlen) {
-                continue;
-            }
-
-            std::array<Point, 4> adjacent = {
-                {pop->pos.x, pop->pos.y-1}, {pop->pos.x+1, pop->pos.y}, {pop->pos.x, pop->pos.y+1}, {pop->pos.x-1, pop->pos.y}
-            };
-            for (Point adj : adjacent) {
-                if (!adj.valid || openset.find(adj) != openset.end()) {
-                    continue;
-                }
-                int h = dst.distance(adj.pos);
-
-                if (!adj->open) {
-                    continue;
-                } else if (tfp->isOpen && (h + pop->g < tfp->f)) {
-                    tfp->g = pop->g + 1;
-                    tfp->f = h + tfp->g;
-                    pqueue.update();
-                    continue;
-                } else {
-                    tfp->g = pop->g + 1;
-                    tfp->f = h + tfp->g;
-                }
-
-                if (h == 1) {
-                    pqueue.clear();
-                    return tfp->g;
-                }
-
-                pqueue.push(tfp);
-                tfp->isOpen = true;
-            }
-        }
-        pqueue.clear();
-        return 0;
-    }
-*/
 #endif

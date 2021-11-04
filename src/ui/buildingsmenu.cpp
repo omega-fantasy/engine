@@ -81,7 +81,7 @@ void BuildingsMenu::tile_clicked(Point p) {
             sound = System.buildings()->create(active_button->name, p) ? "build" : "error";
         }
         if (sound == "build") {
-            set_mode(nullptr);
+            //set_mode(nullptr);
         } else {
             Engine.audio()->play_sound(sound);
         }

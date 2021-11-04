@@ -9,6 +9,7 @@
 #include <chrono>
 #include <algorithm>
 #include <SDL2/SDL.h>
+         
 
 class Composite {
     public:
@@ -52,16 +53,16 @@ class Composite {
                 m_overlay->set_transparent(true);
             }
             Color target_color;
-            target_color.value = color;
+            target_color = color;
             Color old_color;
-            old_color.value = static_cast<unsigned>(m_overlay->pixels()[0]); 
+            old_color = static_cast<unsigned>(m_overlay->pixels()[0]); 
             for (int i = num_frames; i > 0; i--) {
                 Color new_color;
                 for (int j = 0; j < 4; j++) {
-                    new_color.pixel[j] = old_color.pixel[j];
-                    new_color.pixel[j] += ((double)i / num_frames) * (target_color.pixel[j] - old_color.pixel[j]);
+                    new_color[j] = old_color[j];
+                    new_color[j] += ((double)i / num_frames) * (target_color[j] - old_color[j]);
                 }
-                overlay_colors.push_back(new_color.value);
+                overlay_colors.push_back(new_color);
             }
          }
          
@@ -76,7 +77,6 @@ class Composite {
          }
 
     protected:
-         union Color { unsigned value; unsigned char pixel[4]; };
          std::vector<unsigned> overlay_colors;
          Listener* overlay_listener = nullptr;
          Texture* m_overlay = nullptr;
@@ -216,12 +216,12 @@ inline void Composite::draw() {
     }
     if (!overlay_colors.empty()) {
         Color new_color;
-        new_color.value = overlay_colors.back();
+        new_color = overlay_colors.back();
         int* pixels = m_overlay->pixels();
-        std::fill(pixels, pixels + m_overlay->size().w * m_overlay->size().h, (int)new_color.value);
+        std::fill(pixels, pixels + m_overlay->size().w * m_overlay->size().h, int(new_color));
         overlay_colors.pop_back();
         if (overlay_colors.empty()) {
-            if (new_color.pixel[3] == 0) {
+            if (new_color.alpha == 0) {
                 delete m_overlay;
                 m_overlay = nullptr;
             }

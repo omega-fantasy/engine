@@ -14,10 +14,8 @@ template<int N> struct String : StringBase {
     String(const std::string& c) { strcpy(mem, c.c_str()); }
     String(const String<N>& c) { memcpy(mem, c.mem, N); }
     String(const String<N>&&) = delete;
-        
     String<N>& operator=(const String<N>&&) = delete;
     String<N>& operator=(const String<N>& c) { memcpy(mem, c.mem, N); return *this;}
-    
     String<N>& operator=(const std::string& c) { strcpy(mem, c.c_str()); return *this;}
     String<N>& operator=(const char* c) { strcpy(mem, c); return *this;}
     std::string toStdString() { return std::string(mem); }

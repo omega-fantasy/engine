@@ -5,6 +5,7 @@
 #include "engine/ui.h"
 #include "engine/audio.h"
 #include "engine/input.h"
+#include "ui/boxtexture.h"
 
 class MessageBox : public Composite, public Input::Listener {
     public:
@@ -14,7 +15,7 @@ class MessageBox : public Composite, public Input::Listener {
     };
    
    MessageBox(Size sz, const std::string& text, MessageBox::Listener* l = nullptr): Composite(sz), message(text), listener(l) {
-        m_texture = new Texture(0xFF000080, size); 
+        m_texture = new BoxTexture(sz, {0, 0, 170}, {0, 0, 32}, {200, 200, 200});
     }
             
     virtual void key_pressed(const std::string& key) {
@@ -27,6 +28,7 @@ class MessageBox : public Composite, public Input::Listener {
 
     virtual ~MessageBox() {
         delete text;
+        delete m_texture;
         Engine.input()->clear_temp_listeners();
         Engine.input()->enable();
     }

@@ -3,6 +3,7 @@
 #include "ui/townsmenu.h"
 #include "ui/timewidget.h"
 #include "ui/minimap.h"
+#include "ui/boxtexture.h"
 
 class BackButton : public Button {
     public:
@@ -74,7 +75,7 @@ class LoadButton : public Button {
 };
 
 HUD::HUD(Size s): Composite(s) {
-    m_texture = new Texture(0x00000080, s);
+    m_texture = new BoxTexture(s, {0, 0, 170}, {0, 0, 32}, {200, 200, 200});
 }
 
 void HUD::change_layout(const std::vector<std::pair<Composite*, Point>>& new_layout, bool back) {
@@ -96,7 +97,7 @@ void HUD::change_layout(const std::vector<std::pair<Composite*, Point>>& new_lay
         Point p = child.second + start;
         add_child(child.first, p);
     }
-    add_child(mini_map, {(double)(size.w - mini_map->get_size().w) / 2, (double)(size.h - mini_map->get_size().h)});
+    add_child(mini_map, {(double)(size.w - mini_map->get_size().w) / 2, (double)(size.h - 0.05 * size.h - mini_map->get_size().h)});
 }
 
 std::vector<std::pair<Composite*, Point>> HUD::create_standard_layout() {
