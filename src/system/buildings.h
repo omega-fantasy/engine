@@ -7,8 +7,6 @@
 #include "engine/engine.h"
 #include "system/player.h"
 #include "system/system.h"
-#include <map>
-#include <string>
 
 class Buildings {
     public:

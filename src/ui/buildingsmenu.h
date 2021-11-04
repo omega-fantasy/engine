@@ -6,8 +6,6 @@
 #include "engine/tilemap.h"
 #include "engine/ui.h"
 #include "ui/textinputwidget.h"
-#include <vector>
-#include <string>
 
 class BuildingsMenu : public Composite, Tilemap::Listener, TextInputWidget::Listener {
     public:

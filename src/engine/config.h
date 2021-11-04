@@ -1,13 +1,7 @@
 #ifndef CONF_H
 #define CONF_H
 
-#include <vector>
-#include <map>
-#include <fstream>
-#include <iostream>
-#include <variant>
-#include <cassert>
-#include <filesystem>
+#include "util.h"
 
 class ConfigParser {
     public:
@@ -63,17 +57,11 @@ class ConfigParser {
     Node& get(const std::string& file) { return files[file]; }
         
     void add_folder(const std::string& folder) {
-        for (auto& fil : std::filesystem::recursive_directory_iterator(folder)) {
-            std::string filename = fil.path().filename().string();
-            std::string filepath = fil.path().string();
-            if (filename.find(".config") != std::string::npos) {
-                std::string name = filename.substr(0, filename.find("."));
-                std::ifstream f(filepath);
-                files.emplace(name, f);
-            }
+        for (auto& filepath : filelist(folder, ".config")) {
+            std::ifstream f(filepath);
+            files.emplace(filename(filepath), f);
         }
     }
-        
 
     std::map<std::string, Node> files; 
 };

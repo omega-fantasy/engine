@@ -14,7 +14,7 @@ class MessageBox : public Composite, public Input::Listener {
             virtual void confirmed(MessageBox*) {}
     };
    
-   MessageBox(Size sz, const std::string& text, MessageBox::Listener* l = nullptr): Composite(sz), message(text), listener(l) {
+   MessageBox(Size sz, const std::string& txt, MessageBox::Listener* l = nullptr): Composite(sz), message(txt), listener(l) {
         m_texture = new BoxTexture(sz, {0, 0, 170}, {0, 0, 32}, {200, 200, 200});
     }
             

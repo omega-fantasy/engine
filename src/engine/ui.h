@@ -34,7 +34,7 @@ class Text : public Composite {
                     } else {
                         total_height += line_height;
                         if (total_height + line_height > size.h) { 
-                            std::cout << "Text too long!" << std::endl;
+                            //std::cout << "Text too long!" << std::endl;
                             // add excess text handling here
                             break;
                         }
@@ -104,7 +104,7 @@ class TextInput : public Text, public Input::Listener {
                 set_text(current_text + "|", 0.8 * size.h);
                 size = old_size;
                 return;
-            } else if (current_text.size() > max + 1 || key.size() != 1) {
+            } else if ((int)current_text.size() > max + 1 || key.size() != 1) {
                 return;
             }
             set_text(current_text + key + "|", 0.8 * size.h);

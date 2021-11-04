@@ -4,9 +4,6 @@
 #include "engine.h"
 #include "db.h"
 
-#include <map>
-#include <vector>
-
 class Simulation {
     public:
     class Event {

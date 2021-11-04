@@ -4,12 +4,6 @@
 #include "engine.h"
 #include "texture.h"
 #include "config.h"
-#include <cstring>
-#include <vector>
-#include <chrono>
-#include <algorithm>
-#include <SDL2/SDL.h>
-         
 
 class Composite {
     public:
@@ -77,7 +71,7 @@ class Composite {
          }
 
     protected:
-         std::vector<unsigned> overlay_colors;
+         std::vector<Color> overlay_colors;
          Listener* overlay_listener = nullptr;
          Texture* m_overlay = nullptr;
          bool initialized = false;
@@ -91,12 +85,8 @@ class Composite {
 class Screen : public Composite {
     public:
         Screen(Size sz): Composite(sz) {
-            SDL_Init(SDL_INIT_VIDEO);
-            window = SDL_CreateWindow("", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, size.w, size.h, 0);
-            if (std::stoi(Engine.config()->get("settings")["resolution"]["fullscreen"])) {
-                SDL_SetWindowFullscreen(window, SDL_WINDOW_FULLSCREEN);
-            }
-            pixels = static_cast<int*>(SDL_GetWindowSurface(window)->pixels);
+            bool fullscreen = std::stoi(Engine.config()->get("settings")["resolution"]["fullscreen"]);
+            pixels = (int*)create_window(sz, fullscreen);
         }
 
         void clear() {
@@ -127,8 +117,8 @@ class Screen : public Composite {
                 texture_endcut.y = texture_end.y - canvas.b.y;
             }
             
-            int*  texture_pixels = texture->pixels(zoom) + texture_start.y * texture_size.w + texture_start.x; 
-            int*  screen_pixels = pixels + start.y * size.w + start.x;
+            int* texture_pixels = texture->pixels(zoom) + texture_start.y * texture_size.w + texture_start.x; 
+            int* screen_pixels = pixels + start.y * size.w + start.x;
             int linesize = (texture_size.w - texture_start.x - texture_endcut.x) * sizeof(int);
 
             if (texture->transparent()) {
@@ -156,19 +146,16 @@ class Screen : public Composite {
         }
 
         void update() {
-            long long t = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - lastUpdate).count();
+            long long t = now() - last_update;
             long long delta = 16660 - t;
-            if (delta > 0) { SDL_Delay(delta / 1000); }
-            SDL_UpdateWindowSurface(window);
-            //auto diff = std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - lastUpdate).count();
-            //std::cout << "FPS: " << (double)1 / diff << std::endl;
-            lastUpdate = std::chrono::high_resolution_clock::now();
+            if (delta > 0) { wait(delta); }
+            update_window();
+            last_update = now();
         }
 
     private:
-        SDL_Window* window;
         int* pixels;
-        std::chrono::high_resolution_clock::time_point lastUpdate = std::chrono::high_resolution_clock::now();
+        long long last_update = now();
         static constexpr float alpha_lookup[256] = {
             0.0000, 0.0039, 0.0078, 0.0118, 0.0157, 0.0196, 0.0235, 0.0275, 0.0314,
             0.0353, 0.0392, 0.0431, 0.0471, 0.0510, 0.0549, 0.0588, 0.0627, 0.0667,

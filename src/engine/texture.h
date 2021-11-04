@@ -1,37 +1,42 @@
 #ifndef TEXTURE_H
 #define TEXTURE_H
 
-#include "geometry.h"
-
-#include <SDL2/SDL.h>
-#include <SDL2/SDL_ttf.h>
-#include <vector>
-#include <string>
-#include <cstring>
-#include <unordered_map>
-#include <filesystem>
-#include <iostream>
+#include "util.h"
 
 class Texture {
     public:
         using ID = short;
-        Texture(ID id, const std::string& path, const std::string name): m_id(id), m_name(name) {
-            SDL_Surface* img = SDL_LoadBMP(path.c_str());
-            load((int*)img->pixels, {img->w, img->h});
-            SDL_FreeSurface(img);
-        }
-        Texture(SDL_Surface* img): m_id(0), m_name("") {
-            load((int*)img->pixels, {img->w, img->h});
-        }
         Texture(const Texture&) = delete;
         Texture& operator=(const Texture&) = delete;
+        
+        Texture(Color* pixels, Size s, ID id): m_id(id) {
+            width = s.w;
+            height = s.h; 
+            pixels_og = (int*)pixels;
+            for (int y = 0; y < height; y++) {
+                for (int x = 0; x < width; x++) {
+                    bool transparent = pixels[y * width + x].alpha < 128;
+                    if (transparent) {
+                        hasTransparency = true;
+                        break;
+                    }
+                }
+            }
+            if (hasTransparency) {
+                for (int i = 0; i < height * width; i++) {
+                    unsigned char* pixel = (unsigned char*)&pixels_og[i];
+                    float a_pixel = (float)pixel[3] / 255;
+                    pixel[0] *= a_pixel;
+                    pixel[1] *= a_pixel;
+                    pixel[2] *= a_pixel;
+                }
+            }
+        }
         
         Texture(Color color, Size s) {
             m_id = 0;
             pixels_og = new int[s.w * s.h];
-            for (int i = 0; i < s.w * s.h; i++) {
-                pixels_og[i] = color;         
-            }
+            std::fill(pixels_og, pixels_og + s.w * s.h, int(color));
             width = s.w;
             height = s.h;
         }
@@ -55,65 +60,20 @@ class Texture {
             return load_scaled(zoom);
         }
 
-        Size size(float zoom = 1) {
-            return Size(width * zoom, height * zoom);
-        }
-
-        std::string name() { return m_name; }
-
-        bool transparent() {
-            return hasTransparency;
-        }
-
-        void set_transparent(bool b) {
-            hasTransparency = b;
-        }   
-
+        Size size(float zoom = 1) { return Size(width * zoom, height * zoom); }
+        bool transparent() { return hasTransparency; }
+        void set_transparent(bool b) { hasTransparency = b; }   
         ID id() { return m_id; }
         void set_id(ID i) { m_id = i; }
 
     protected:
         ID m_id;
-        std::string m_name;
         std::vector<int*> pixels_zoomin;
         std::vector<int*> pixels_zoomout;
         int* pixels_og = nullptr;
         bool hasTransparency = false;
         int width = 0;
         int height = 0;
-        
-        int fastlog2(float v) {
-            if (v == 0.125) return -3;
-            if (v == 0.25) return -2;
-            if (v == 0.5) return -1;
-            if (v == 0.0625) return -4;
-            return 0; 
-        }
-
-        void load(int* src, Size s) {
-            width = s.w;
-            height = s.h; 
-            pixels_og = new int[width * height];
-            for (int y = 0; y < height; y++) {
-                for (int x = 0; x < width; x++) {
-                    int idx =  y * width + x;
-                    pixels_og[idx] = src[idx];
-                    bool transparent = *((unsigned char*)(pixels_og + idx) + 3) < 128;
-                    if (transparent) {
-                        hasTransparency = true;
-                    }
-                }
-            }
-            if (hasTransparency) {
-                for (int i = 0; i < height * width; i++) {
-                    unsigned char* pixel =  (unsigned char*)&pixels_og[i];
-                    float a_pixel = (float)pixel[3] / 255;
-                    pixel[0] *= a_pixel;
-                    pixel[1] *= a_pixel;
-                    pixel[2] *= a_pixel;
-                }
-            }
-        }
 
         int* load_scaled(float zoom) {
             int fact = (double)1 / zoom;
@@ -142,7 +102,11 @@ class Texture {
                 }
                 pixels_zoomin[zoom] = pixels;
             } else if (zoom < 1){
-                int idx = -fastlog2(zoom);
+                int idx = 0;
+                if (zoom == 0.125) idx = 3;
+                if (zoom == 0.25) idx = 2;
+                if (zoom == 0.5) idx = 1;
+                if (zoom == 0.0625) idx = 4;
                 if ((int)pixels_zoomout.size() < idx+1) {
                     pixels_zoomout.resize(idx+1);
                 }
@@ -155,26 +119,24 @@ class Texture {
 class TextureManager {
     public:
         const std::string GENERATED_TOKEN = "__";
-
-        TextureManager() {
-            letter_to_texture.resize(1024);
-        }
+        TextureManager() { letter_to_texture.resize(1024); }
 
         void add_folder(const std::string& folder) {
-            for (auto& fil : std::filesystem::recursive_directory_iterator(folder)) {
-                std::string filename = fil.path().filename().string();
-                std::string filepath = fil.path().string();
-                if (filename.find(".bmp") != std::string::npos) {
-                    std::string name = filename.substr(0, filename.find("."));
-                    Texture* t  = new Texture(currentID, filepath, name);
-                    id_to_texture[currentID] = t;
-                    name_to_texture[name] = t;
-                    currentID++;
-                }
+            for (auto& filepath : filelist(folder, ".bmp")) {
+                auto bmp = load_bmp(filepath);
+                Texture* t  = new Texture(bmp.first, bmp.second, currentID);
+                id_to_texture[currentID] = t;
+                name_to_texture[filename(filepath)] = t;
+                currentID++;
             }
         }
 
-        Texture* get(Texture::ID id) { return id_to_texture[id]; }
+        Texture* get(Texture::ID id) { 
+            if (!id_to_texture[id]) {
+                return nullptr;
+            }
+            return id_to_texture[id]; 
+        }
         
         Texture* get(const std::string& name) {
             if (name_to_texture.find(name) != name_to_texture.end()) {
@@ -194,7 +156,7 @@ class TextureManager {
 
     private:
         Texture* id_to_texture[15000] = {0};
-        std::unordered_map<std::string, Texture*> name_to_texture;
+        std::map<std::string, Texture*> name_to_texture;
         std::vector<std::vector<Texture*>> letter_to_texture;
         Texture::ID currentID = 1;
         
@@ -253,20 +215,13 @@ class TextureManager {
             return gen_texture;
         }
 
-        void init_letters(int size) {
-            TTF_Font * font = TTF_OpenFont("res/mono.ttf", size);
-            SDL_Color fgcolor = {255, 255, 255, 255};
-            letter_to_texture[size].resize(128);
-            union LU {
-                char c[2] = {0, 0};
-                unsigned short us;
-            };
-            LU letter;
-            for (char c = 32; c < 127; c++) {
-                letter.c[0] = c;
-                SDL_Surface* surface = TTF_RenderGlyph_Blended(font, letter.us, fgcolor);
-                letter_to_texture[size][c] = new Texture(surface);
-                SDL_FreeSurface(surface);
+        void init_letters(int height, Color color = {255, 255, 255}) {
+            char start = 32;
+            char end = 127;
+            letter_to_texture[height].resize(end + 1);
+            auto letters = load_letters("./res/mono.ttf", height, color, start, end);
+            for (auto& letter : letters) {
+                letter_to_texture[height][start++] = new Texture(letter.first, letter.second, 0);
             }
         }
 };

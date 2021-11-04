@@ -67,8 +67,8 @@ Point Tilemap::texture_root(Point p) {
     return p;
 }
 
-void Tilemap::unset_tile(Point pos) {
-    Point p = texture_root(pos);
+void Tilemap::unset_tile(Point ps) {
+    Point p = texture_root(ps);
     Texture::ID id = tiles_above->get(p.x, p.y);
     if (id <= 0) {
         return;
@@ -167,8 +167,8 @@ void Tilemap::draw() {
 
     Texture* t = Engine.textures()->get(cursor_texture);
     Box b(pos, size);
-    Point mouse_pos = Engine.input()->mouse_pos();
-    bool do_update = t && b.inside(mouse_pos) && mouse_pos != last_mouse_pos;
+    Point mpos = mouse_pos();
+    bool do_update = t && b.inside(mpos) && mpos != last_mouse_pos;
 
     if (needs_update() || do_update) {
         Box visible = visible_tiles();
@@ -189,14 +189,14 @@ void Tilemap::draw() {
                             {pos, size}, zoom);
             }
         }        
-        if (t && b.inside(mouse_pos)) { // snap to tile
-            BigPoint mouse_abs = camera_pos + mouse_pos - pos;
+        if (t && b.inside(mpos)) { // snap to tile
+            BigPoint mouse_abs = camera_pos + mpos - pos;
             Point tile_abs = { mouse_abs.x / (tile_dim.w * zoom), mouse_abs.y / (tile_dim.h * zoom) };
             mouse_abs = { tile_abs.x * (tile_dim.w * zoom), tile_abs.y * (tile_dim.h * zoom) };
             tile_abs = { mouse_abs.x - camera_pos.x + pos.x, mouse_abs.y - camera_pos.y + pos.y };
             Engine.screen()->blit(t, tile_abs, Box(pos, size), zoom);
         }
-        last_mouse_pos = mouse_pos;
+        last_mouse_pos = mpos;
         set_update(false);
     }
     Composite::draw();

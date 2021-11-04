@@ -1,29 +1,7 @@
 #ifndef DB_H
 #define DB_H
 
-#include <map>
-#include <iostream>
-#include <fstream>
-#include <vector>
-#include <cstring>
-
-struct StringBase{};
-template<int N> struct String : StringBase {
-    String() {}
-    String(const char* c) { strcpy(mem, c); }
-    String(const std::string& c) { strcpy(mem, c.c_str()); }
-    String(const String<N>& c) { memcpy(mem, c.mem, N); }
-    String(const String<N>&&) = delete;
-    String<N>& operator=(const String<N>&&) = delete;
-    String<N>& operator=(const String<N>& c) { memcpy(mem, c.mem, N); return *this;}
-    String<N>& operator=(const std::string& c) { strcpy(mem, c.c_str()); return *this;}
-    String<N>& operator=(const char* c) { strcpy(mem, c); return *this;}
-    std::string toStdString() { return std::string(mem); }
-    char mem[N] = {0};
-};
-using String8 = String<8>;
-using String16 = String<16>;
-using String32 = String<32>;
+#include "util.h"
 
 class TableBase {
     public:

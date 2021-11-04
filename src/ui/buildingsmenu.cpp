@@ -4,7 +4,6 @@
 #include "engine/engine.h"
 #include "system/buildings.h"
 #include "system/system.h"
-#include <string>
         
 class BuildingsMenu::BuildButton : public Button {
     public:

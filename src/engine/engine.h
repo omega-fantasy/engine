@@ -12,7 +12,7 @@ class Simulation;
 class ConfigParser;
 class ScenePlayer;
 
-#include "geometry.h"
+#include "util.h"
 
 class GameEngine {
     public:

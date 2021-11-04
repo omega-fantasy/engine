@@ -3,14 +3,7 @@
 
 #include "engine.h"
 #include "db.h"
-#include "screen.h"
-#include "input.h"
 #include "config.h"
-#include <random>
-#include <chrono>
-#include <utility>
-#include <vector>
-#include <algorithm>
 
 class MapGen {
     public:
@@ -29,9 +22,8 @@ class MapGen {
                     }
                     return m_id;
                 }
-                private:
-                    Texture::ID m_id = -1;
-                    Size m_size = {0, 0};
+                Texture::ID m_id = -1;
+                Size m_size = {0, 0};
             };
 
             struct Biome {
@@ -50,9 +42,7 @@ class MapGen {
                     }
                     return m_id;
                 }
-
-                private:
-                    Texture::ID m_id = -1;
+                Texture::ID m_id = -1;
             };
 
             Config() {
@@ -86,15 +76,6 @@ class MapGen {
             auto map = Engine.map();
             Size map_size = {tiles_ground->width(), tiles_ground->height()};
             Size tile_dim = map->tile_size();
-            
-            unsigned seed = (unsigned)(std::chrono::system_clock::now().time_since_epoch().count());
-            auto generator = std::default_random_engine(seed);
-            std::uniform_int_distribution<int> distribution(0, 2147483647);
-            unsigned long long r = distribution(generator);
-            auto rnd = [&]() {
-                r = r * 48271 % 2147483648;
-                return (double)r / 2147483648;
-            };
 
             Config config;
             Size num_cells = {config.num_cells, config.num_cells};
@@ -110,7 +91,7 @@ class MapGen {
             std::vector<std::pair<Point, double>> anchors;
             for (short y = 0; y < num_cells.h; y++) {
                 for (short x = 0; x < num_cells.w; x++) {
-                    anchors.push_back({{(x + rnd()) * cell_size.w, (y + rnd()) * cell_size.h}, rnd()}); 
+                    anchors.push_back({{(x + random_uniform()) * cell_size.w, (y + random_uniform()) * cell_size.h}, random_uniform()}); 
                 }
             }
             for (short y_map = 0; y_map < map_size.h; y_map++) {
@@ -160,7 +141,7 @@ class MapGen {
                                         heightmap->get(x_map, y_map) = height < 0 ? 0 : height;
                                     }
                                     tiles_ground->get(x_map, y_map) = biome.blocking ? -biome.id() : biome.id();
-                                    double val = rnd();
+                                    double val = random_uniform();
                                     current_val = 0;
                                     for (auto& item : biome.items) {
                                         current_val += item.perc;

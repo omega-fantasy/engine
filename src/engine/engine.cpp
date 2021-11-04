@@ -17,7 +17,6 @@ GameEngine::GameEngine() {
 }
 
 void GameEngine::init(Size screen_size) {
-    TTF_Init();
     m_db = new Database("database");
     m_input = new Input();
     m_audio = new AudioPlayer();

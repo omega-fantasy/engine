@@ -3,8 +3,6 @@
 
 #include "engine/engine.h"
 #include "engine/ui.h"
-#include <utility>
-#include <vector>
 class MiniMap;
 
 class HUD : public Composite {

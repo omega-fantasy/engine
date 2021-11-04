@@ -1,16 +1,24 @@
-#ifndef GEOMETRY_H
-#define GEOMETRY_H
+#ifndef UTIL_H
+#define UTIL_H
 
 #include <cmath>
+#include <cstring>
+#include <cassert>
+#include <string>
+#include <vector>
+#include <variant>
+#include <utility>
+#include <algorithm>
+#include <map>
+#include <fstream>
+
+// Utility data structures
 
 struct Point {
     Point(): x(0), y(0) {}
     Point(short a, short b): x(a), y(b) {} 
     Point(int a, int b): x(a), y(b) {} 
-    Point(int pos) { 
-        x = pos & 0x0000FFFF;
-        y = (pos & 0xFFFF0000) >> 16;
-    } 
+    Point(int pos) { x = pos & 0x0000FFFF; y = (pos & 0xFFFF0000) >> 16; } 
     Point(double a, double b): x(a), y(b) {} 
     short x;
     short y;
@@ -62,20 +70,22 @@ struct Box {
 };
 
 struct Color {
+    Color(const Color& c) { *((unsigned*)this) = unsigned(c); };
+
     Color() {}
-    Color(unsigned char r, unsigned char g, unsigned char b, unsigned char a=255): red(r), green(g), blue(b), alpha(a) {}
+    Color(unsigned char r, unsigned char g, unsigned char b, unsigned char a=255): blue(b), green(g), red(r), alpha(a) {}
     Color(unsigned u) { *this = u; }
     Color operator-(unsigned char d) { return Color(blue > d ? blue - d : 0, green > d ? green - d : 0, red > d ? red - d : 0, alpha); }
     Color& operator=(int i) { *((int*)this) = i; return *this; } 
     Color& operator=(unsigned u) { *((unsigned*)this) = u; return *this; } 
     Color& operator=(Color c) { *((unsigned*)this) = unsigned(c); return *this; } 
     operator int() { return *((int*)this); }
-    operator unsigned() { return *((unsigned*)this); }
+    operator unsigned() const { return *((unsigned*)this); }
     unsigned char& operator[](int i) {
         switch (i) {
-            case 0: return red;
+            case 0: return blue;
             case 1: return green;
-            case 2: return blue;
+            case 2: return red;
             case 3: return alpha;
             default: return red;
         }
@@ -85,5 +95,49 @@ struct Color {
     unsigned char red;
     unsigned char alpha;
 };
+
+struct StringBase{};
+template<int N> struct String : StringBase {
+    String() {}
+    String(const char* c) { strcpy(mem, c); }
+    String(const std::string& c) { strcpy(mem, c.c_str()); }
+    String(const String<N>& c) { memcpy(mem, c.mem, N); }
+    String(const String<N>&&) = delete;
+    String<N>& operator=(const String<N>&&) = delete;
+    String<N>& operator=(const String<N>& c) { memcpy(mem, c.mem, N); return *this;}
+    String<N>& operator=(const std::string& c) { strcpy(mem, c.c_str()); return *this;}
+    String<N>& operator=(const char* c) { strcpy(mem, c); return *this;}
+    std::string toStdString() { return std::string(mem); }
+    char mem[N] = {0};
+};
+using String8 = String<8>;
+using String16 = String<16>;
+using String32 = String<32>;
+
+
+
+
+
+// Utility methods
+
+std::pair<Color*, Size> load_bmp(const std::string& filepath);
+std::vector<std::pair<Color*, Size>> load_letters(const std::string& fontpath, int height, Color color, char start, char end);
+
+std::vector<std::string> filelist(const std::string& path, const std::string& filter = "");
+std::string filename(const std::string& filepath);
+
+Color* create_window(Size s, bool fullscreen);
+void update_window();
+
+void wait(int us);
+long long now();
+
+double random_uniform();
+
+using AudioHandle = void*;
+AudioHandle load_wav(const std::string& filepath, bool music);
+void play_wav(AudioHandle audio, bool music);
+
+Point mouse_pos();
 
 #endif

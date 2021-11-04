@@ -1,11 +1,8 @@
 #ifndef INPUT_H
 #define INPUT_H
 
-#include "geometry.h"
+#include "util.h"
 #include <SDL2/SDL.h>
-#include <string>
-#include <vector>
-#include <unordered_map>
 
 class Input {
     public:
@@ -16,23 +13,10 @@ class Input {
             //virtual void keyReleased(const std::string& /*key*/) {};
         };
 
-        void enable() {
-            enabled = true;
-        }
-
-        void disable() {
-            enabled = false;
-        }
-
-        Point mouse_pos() {
-            int mx, my;
-            SDL_GetMouseState(&mx, &my);
-            return {mx, my};
-        }
-
-        void clear_temp_listeners() {
-            clear_temps = true;
-        }
+        void enable() { enabled = true; }
+        void disable() { enabled = false;}
+        void clear_temp_listeners() { clear_temps = true; }
+        void remove_mouse_listener(Input::Listener* l) { remove_list.push_back(l); }
 
         void add_key_listeners(Input::Listener* l, const std::vector<std::string>& keys, bool hold = false, bool temp = false) {
             for (auto& key : keys) {
@@ -42,10 +26,6 @@ class Input {
                     addKeyPressListener(l, key, temp);
                 }
             }
-        }
-
-        void remove_mouse_listener(Input::Listener* l) {
-            remove_list.push_back(l);
         }
 
         void add_mouse_listener(Input::Listener* l, Box b, bool temp = false) {
@@ -88,21 +68,20 @@ class Input {
                     }
                     case SDL_MOUSEBUTTONDOWN: {
                         if (event.button.button == SDL_BUTTON_LEFT) {
-                            int mx, my;
-                            SDL_GetMouseState(&mx, &my);
+                            Point p = mouse_pos();
                             for (auto& click : temp_clicks) {
                                 auto& box = click.second;
-                                if (mx >= box.a.x && my >= box.a.y && mx <= box.b.x && my <= box.b.y) {
+                                if (p.x >= box.a.x && p.y >= box.a.y && p.x <= box.b.x && p.y <= box.b.y) {
                                     if (!clear_temps) {
-                                        click.first->mouse_clicked({mx, my});
+                                        click.first->mouse_clicked(p);
                                     }
                                 }
                             }
                             if (enabled) {
                                 for (auto& click : clicks) {
                                     auto& box = click.second;
-                                    if (mx >= box.a.x && my >= box.a.y && mx <= box.b.x && my <= box.b.y) {
-                                        click.first->mouse_clicked({mx, my});
+                                    if (p.x >= box.a.x && p.y >= box.a.y && p.x <= box.b.x && p.y <= box.b.y) {
+                                        click.first->mouse_clicked(p);
                                     }
                                 }
                             }
@@ -145,11 +124,11 @@ class Input {
         }
 
     private:
-        std::unordered_map<SDL_Keycode, Input::Listener*> temp_presses;
-        std::unordered_map<SDL_Keycode, Input::Listener*> presses;
-        std::unordered_map<SDL_Scancode, Input::Listener*> holds;
-        std::unordered_map<Input::Listener*, Box> temp_clicks;
-        std::unordered_map<Input::Listener*, Box> clicks;
+        std::map<SDL_Keycode, Input::Listener*> temp_presses;
+        std::map<SDL_Keycode, Input::Listener*> presses;
+        std::map<SDL_Scancode, Input::Listener*> holds;
+        std::map<Input::Listener*, Box> temp_clicks;
+        std::map<Input::Listener*, Box> clicks;
         std::vector<Input::Listener*> remove_list;
         bool enabled = true;
         bool clear_temps = false;
