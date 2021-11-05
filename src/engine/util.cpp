@@ -50,7 +50,9 @@ std::vector<std::string> filelist(const std::string& path, const std::string& fi
 
 std::string filename(const std::string& filepath) {
     std::string f = filepath;
-    if (f.find("/") != std::string::npos) {
+    if (f.find("\\") != std::string::npos) {
+        f = f.substr(f.find_last_of("\\") + 1);
+    } else if (f.find("/") != std::string::npos) {
         f = f.substr(f.find_last_of("/") + 1);
     }
     if (f.find(".") != std::string::npos) {

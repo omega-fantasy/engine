@@ -12,12 +12,6 @@ class Texture {
         
         Texture(Size s, Color* pixels): width(s.w), height(s.h) {
             hasTransparency = std::any_of(pixels, pixels+width*height, [](Color p){return p.alpha < 128;});
-            if (hasTransparency) { // pre-multiply transparency
-                std::for_each(pixels, pixels+width*height, [](Color& p){
-                    float a_pixel = (float)p[3] / 255;
-                    p[0] *= a_pixel; p[1] *= a_pixel; p[2] *= a_pixel;
-                });
-            }
             pixels_og = (int*)pixels;
         }
         
