@@ -1,7 +1,8 @@
 #ifndef TEXTURE_H
 #define TEXTURE_H
 
-#include "util.h"
+#include "engine.h"
+#include "config.h"
 
 class Texture {
     public:
@@ -9,36 +10,20 @@ class Texture {
         Texture(const Texture&) = delete;
         Texture& operator=(const Texture&) = delete;
         
-        Texture(Color* pixels, Size s, ID id): m_id(id) {
-            width = s.w;
-            height = s.h; 
+        Texture(Size s, Color* pixels): width(s.w), height(s.h) {
+            hasTransparency = std::any_of(pixels, pixels+width*height, [](Color p){return p.alpha < 128;});
+            if (hasTransparency) { // pre-multiply transparency
+                std::for_each(pixels, pixels+width*height, [](Color& p){
+                    float a_pixel = (float)p[3] / 255;
+                    p[0] *= a_pixel; p[1] *= a_pixel; p[2] *= a_pixel;
+                });
+            }
             pixels_og = (int*)pixels;
-            for (int y = 0; y < height; y++) {
-                for (int x = 0; x < width; x++) {
-                    bool transparent = pixels[y * width + x].alpha < 128;
-                    if (transparent) {
-                        hasTransparency = true;
-                        break;
-                    }
-                }
-            }
-            if (hasTransparency) {
-                for (int i = 0; i < height * width; i++) {
-                    unsigned char* pixel = (unsigned char*)&pixels_og[i];
-                    float a_pixel = (float)pixel[3] / 255;
-                    pixel[0] *= a_pixel;
-                    pixel[1] *= a_pixel;
-                    pixel[2] *= a_pixel;
-                }
-            }
         }
         
-        Texture(Color color, Size s) {
-            m_id = 0;
+        Texture(Color color, Size s): width(s.w), height(s.h) {
             pixels_og = new int[s.w * s.h];
             std::fill(pixels_og, pixels_og + s.w * s.h, int(color));
-            width = s.w;
-            height = s.h;
         }
 
         int* pixels(float zoom = 1) {
@@ -67,7 +52,7 @@ class Texture {
         void set_id(ID i) { m_id = i; }
 
     protected:
-        ID m_id;
+        ID m_id = 0;
         std::vector<int*> pixels_zoomin;
         std::vector<int*> pixels_zoomout;
         int* pixels_og = nullptr;
@@ -121,13 +106,26 @@ class TextureManager {
         const std::string GENERATED_TOKEN = "__";
         TextureManager() { letter_to_texture.resize(1024); }
 
+        void register_texture(const std::string& name, Texture* t) {
+            t->set_id(currentID);
+            id_to_texture[currentID] = t;
+            name_to_texture[name] = t;
+            currentID++;
+        }
+
         void add_folder(const std::string& folder) {
             for (auto& filepath : filelist(folder, ".bmp")) {
                 auto bmp = load_bmp(filepath);
-                Texture* t  = new Texture(bmp.first, bmp.second, currentID);
-                id_to_texture[currentID] = t;
-                name_to_texture[filename(filepath)] = t;
-                currentID++;
+                register_texture(filename(filepath), new Texture(bmp.second, bmp.first));
+            }
+            auto& config = Engine.config()->get("textures");
+            if (!std::stoi(config["use_generated_textures"])) {
+                return;
+            }
+            for (auto& g : config["generate"]) {
+                Color c(std::stoi(g["red"]), std::stoi(g["green"]), std::stoi(g["blue"]));
+                Size s(std::stoi(Engine.config()->get("settings")["tilesize"]["width"]), std::stoi(Engine.config()->get("settings")["tilesize"]["height"]));
+                register_texture(g["name"], generate(s, c, std::stod(g["variance"])));
             }
         }
 
@@ -159,18 +157,6 @@ class TextureManager {
         std::map<std::string, Texture*> name_to_texture;
         std::vector<std::vector<Texture*>> letter_to_texture;
         Texture::ID currentID = 1;
-        
-        int darken_pixel(int pixel) {
-            constexpr unsigned char d = 80;
-            int out = 0;
-            unsigned char* px_in =  (unsigned char*)&pixel;
-            unsigned char* px_out =  (unsigned char*)&out;
-            px_out[0] = px_in[0] > d ? px_in[0] - d : 0;
-            px_out[1] = px_in[1] > d ? px_in[1] - d : 0;
-            px_out[2] = px_in[2] > d ? px_in[2] - d : 0;
-            px_out[3] = px_in[3] > d ? px_in[3] - d : 0;
-            return out;
-        }
 
         Texture* get_generated(const std::string& name) {
             std::string basename = name.substr(0, name.find(GENERATED_TOKEN)); 
@@ -183,36 +169,47 @@ class TextureManager {
             Texture* gen_texture = new Texture(0x0, s);
             //gen_texture->set_transparent(true);
             std::memcpy(gen_texture->pixels(), t->pixels(), s.w * s.h * sizeof(int));
-            int* pixels = gen_texture->pixels();
+            Color* pixels = (Color*)gen_texture->pixels();
+            unsigned char d = 60;
             if (postfix.find("top") != std::string::npos) {
                 for (int x = 0; x < s.w; x++) {
-                    pixels[x] = darken_pixel(pixels[x]);
-                    pixels[x + s.w] = darken_pixel(pixels[x + s.w]);
+                    pixels[x] = pixels[x] - d;
+                    pixels[x + s.w] = pixels[x + s.w] - d;
                 }
             }
             if (postfix.find("bottom") != std::string::npos) {
                 for (int x = 0; x < s.w; x++) {
-                    pixels[x + (s.w-1)*s.h] = darken_pixel(pixels[x + (s.w-1)*s.h]);
-                    pixels[x + (s.w-2)*s.h] = darken_pixel(pixels[x + (s.w-2)*s.h]);
+                    pixels[x + (s.w-1)*s.h] = pixels[x + (s.w-1)*s.h] - d;
+                    pixels[x + (s.w-2)*s.h] = pixels[x + (s.w-2)*s.h] - d;
                 }
             }
             if (postfix.find("left") != std::string::npos) {
                 for (int x = 0; x < s.h; x++) {
-                    pixels[x * s.w] = darken_pixel(pixels[x * s.w]);
-                    pixels[x * s.w + 1] = darken_pixel(pixels[x * s.w + 1]);
+                    pixels[x * s.w] = pixels[x * s.w] - d;
+                    pixels[x * s.w + 1] = pixels[x * s.w + 1] - d;
                 }
             }
             if (postfix.find("right") != std::string::npos) {
                 for (int x = 0; x < s.h; x++) {
-                    pixels[x * s.w + s.w - 1] = darken_pixel(pixels[x * s.w + s.w - 1]);
-                    pixels[x * s.w + s.w - 2] = darken_pixel(pixels[x * s.w + s.w - 2]);
+                    pixels[x * s.w + s.w - 1] = pixels[x * s.w + s.w - 1] - d;
+                    pixels[x * s.w + s.w - 2] = pixels[x * s.w + s.w - 2] - d;
                 }
             }
-            gen_texture->set_id(currentID);
-            id_to_texture[currentID] = gen_texture;
-            name_to_texture[name] = gen_texture;
-            currentID++;
+            register_texture(name, gen_texture);
             return gen_texture;
+        }
+
+        Texture* generate(Size s, Color c, double variance) {
+            Color* img = new Color[s.w * s.h];
+            std::for_each(img, img+s.w*s.h, [&](Color& p){
+                double gauss = random_gauss(0, variance);
+                if (gauss < 0) {
+                    p = c - (unsigned char)(255 * -gauss);
+                } else {
+                    p = c + (unsigned char)(255 * gauss);
+                }
+            });
+            return new Texture(s, img);
         }
 
         void init_letters(int height, Color color = {255, 255, 255}) {
@@ -221,7 +218,7 @@ class TextureManager {
             letter_to_texture[height].resize(end + 1);
             auto letters = load_letters("./res/mono.ttf", height, color, start, end);
             for (auto& letter : letters) {
-                letter_to_texture[height][start++] = new Texture(letter.first, letter.second, 0);
+                letter_to_texture[height][start++] = new Texture(letter.second, letter.first);
             }
         }
 };

@@ -90,7 +90,7 @@ double random_uniform() {
     static unsigned long long r = 0;
     static bool init = false;
     if (!init) {
-        unsigned seed = (unsigned)(std::chrono::system_clock::now().time_since_epoch().count());
+        unsigned seed = (unsigned)now();
         auto generator = std::default_random_engine(seed);
         std::uniform_int_distribution<int> distribution(0, 2147483647);
         r = distribution(generator);
@@ -98,6 +98,13 @@ double random_uniform() {
     }
     r = (r * 48271) % 2147483648;
     return (double)r / 2147483648;
+}
+
+double random_gauss(double mean, double dev) {
+    static unsigned seed = (unsigned)now();
+    static std::mt19937 generator(seed);
+    std::normal_distribution<double> distribution(mean, dev);
+    return distribution(generator);
 }
            
 AudioHandle load_wav(const std::string& filepath, bool music) {

@@ -43,7 +43,7 @@ class Composite {
          void set_overlay(unsigned color, int num_frames, Listener* listener = nullptr) {
             overlay_listener = listener;
             if (!m_overlay) {
-                m_overlay = new Texture(0x0, size);
+                m_overlay = new Texture((unsigned)0x0, size);
                 m_overlay->set_transparent(true);
             }
             Color target_color;
@@ -117,8 +117,8 @@ class Screen : public Composite {
                 texture_endcut.y = texture_end.y - canvas.b.y;
             }
             
-            int* texture_pixels = texture->pixels(zoom) + texture_start.y * texture_size.w + texture_start.x; 
-            int* screen_pixels = pixels + start.y * size.w + start.x;
+            unsigned* texture_pixels = (unsigned*)(texture->pixels(zoom) + texture_start.y * texture_size.w + texture_start.x); 
+            unsigned* screen_pixels = (unsigned*)(pixels + start.y * size.w + start.x);
             int linesize = (texture_size.w - texture_start.x - texture_endcut.x) * sizeof(int);
 
             if (texture->transparent()) {

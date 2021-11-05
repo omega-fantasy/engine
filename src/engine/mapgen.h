@@ -167,8 +167,8 @@ class MapGen {
                     }
                     if (heightmap->get(x_map, y_map) > heightmap->get(x_map, y_map+1)) {
                         postfix += "bottom";
-                        for (int i = 0; i < wall_height; i++) { 
-                            map->set_ground(mountain_biome.name_wall, {x_map+0, y_map+i}, true);
+                        for (int i = 1; i <= wall_height; i++) { 
+                            map->set_ground(mountain_biome.name_wall+"__left_right", {x_map+0, y_map+i}, true);
                         }
                     }
                     if (heightmap->get(x_map, y_map) > heightmap->get(x_map-1, y_map)) {

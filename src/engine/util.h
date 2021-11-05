@@ -75,7 +75,9 @@ struct Color {
     Color() {}
     Color(unsigned char r, unsigned char g, unsigned char b, unsigned char a=255): blue(b), green(g), red(r), alpha(a) {}
     Color(unsigned u) { *this = u; }
-    Color operator-(unsigned char d) { return Color(blue > d ? blue - d : 0, green > d ? green - d : 0, red > d ? red - d : 0, alpha); }
+    Color(int i) { *this = i; }
+    Color operator-(unsigned char d) { return Color(red > d ? red - d : 0, green > d ? green - d : 0, blue > d ? blue - d : 0, alpha); }
+    Color operator+(unsigned char d) { return Color(red + d < 255 ? red + d : 255, green + d < 255 ? green + d : 255, blue + d < 255 ? blue + d : 255, alpha); }
     Color& operator=(int i) { *((int*)this) = i; return *this; } 
     Color& operator=(unsigned u) { *((unsigned*)this) = u; return *this; } 
     Color& operator=(Color c) { *((unsigned*)this) = unsigned(c); return *this; } 
@@ -133,6 +135,7 @@ void wait(int us);
 long long now();
 
 double random_uniform();
+double random_gauss(double mean, double dev);
 
 using AudioHandle = void*;
 AudioHandle load_wav(const std::string& filepath, bool music);

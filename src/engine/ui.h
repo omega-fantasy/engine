@@ -83,7 +83,7 @@ class TextInput : public Text, public Input::Listener {
     public:
         TextInput(unsigned short max_length, Size sz): Text("|", 0.8 * sz.h, sz), max(max_length) {
             size = sz;
-            m_texture = new Texture(0x0, size); 
+            m_texture = new Texture((unsigned)0x0, size); 
             MAX_NO_UPDATES = 1;
         }
 
