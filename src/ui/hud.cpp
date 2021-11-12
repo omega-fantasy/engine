@@ -1,6 +1,7 @@
 #include "ui/hud.h"
 #include "ui/buildingsmenu.h"
 #include "ui/townsmenu.h"
+#include "ui/researchmenu.h"
 #include "ui/timewidget.h"
 #include "ui/minimap.h"
 #include "ui/boxtexture.h"
@@ -23,6 +24,27 @@ class BuildingsButton : public Button {
             Size s = parent->get_size();
             BuildingsMenu* menu = new BuildingsMenu({s.w * 1.0, s.h * 0.5});
             parent->change_layout({{menu, {0,0}}});
+        }
+        HUD* parent;
+};
+
+class ResearchButton : public Button {
+    public:
+        ResearchButton(HUD* p): Button({0, 0}, "Research"), parent(p) {}
+        void mouse_clicked(Point) {
+            Engine.audio()->play_sound("menu1");
+            Size s = parent->get_size();
+            ResearchMenu* menu = new ResearchMenu({s.w * 1.0, s.h * 0.5});
+            parent->change_layout({{menu, {0,0}}});
+        }
+        HUD* parent;
+};
+
+class EventButton : public Button {
+    public:
+        EventButton(HUD* p): Button({0, 0}, "Events"), parent(p) {}
+        void mouse_clicked(Point) {
+            Engine.audio()->play_sound("menu1");
         }
         HUD* parent;
 };
@@ -102,10 +124,10 @@ void HUD::change_layout(const std::vector<std::pair<Composite*, Point>>& new_lay
 
 std::vector<std::pair<Composite*, Point>> HUD::create_standard_layout() {
     std::vector<std::pair<Composite*, Point>> ret;
-    std::vector<Button*> buttons = {new BuildingsButton(this), new TownsButton(this), new SimulateButton(), new SaveButton(), new LoadButton()};
+    std::vector<Button*> buttons = {new BuildingsButton(this), new ResearchButton(this), new EventButton(this), new TownsButton(this), new SimulateButton(), new SaveButton(), new LoadButton()};
     for (int i = 0; i < (int)buttons.size(); i++) {
-        buttons[i]->set_texture(new Texture(0xFF555555, {0.8 * size.w, 0.08 * size.h}));
-        ret.push_back({buttons[i], {0.1 * size.w, (i+1) * 0.1 * size.h}});
+        buttons[i]->set_texture(new Texture(0xFF555555, {0.8 * size.w, 0.06 * size.h}));
+        ret.push_back({buttons[i], {0.1 * size.w, (i+1) * 0.07 * size.h}});
     }
     return ret;
 }

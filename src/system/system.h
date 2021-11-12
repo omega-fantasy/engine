@@ -4,6 +4,7 @@
 class Buildings;
 class Player;
 class Simulate;
+class Research;
 
 class GameSystem {
     public:
@@ -11,11 +12,13 @@ class GameSystem {
 
         Player* player() { return m_player; }
         Buildings* buildings() { return m_buildings; }
+        Research* research() { return m_research; }
         Simulate* simulate() { return m_simulate; }
 
     private:
         Player* m_player = nullptr;
         Buildings* m_buildings = nullptr;
+        Research* m_research = nullptr;
         Simulate* m_simulate = nullptr;
 };
 

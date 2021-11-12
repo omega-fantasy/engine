@@ -6,6 +6,27 @@
 #include "texture.h"
 #include "input.h"
 
+class ProgressBar : public Composite {
+    public:
+        ProgressBar(Size sz, Color fg, Color bg): Composite(sz), color_fg(fg), color_bg(bg) {
+            m_texture = new Texture(bg, sz);   
+        }
+        ~ProgressBar() { delete m_texture; }
+
+        void set_progress(int progress) {
+            short cutoff = ((double)progress / 100) * size.w;
+            Color* pixels = (Color*)m_texture->pixels();
+            for (short y = 0; y < size.h; y++) {
+                for (short x = 0; x < size.w; x++) {
+                    pixels[y * size.w + x] = x <= cutoff ? color_fg : color_bg;
+                }
+            }
+        }
+
+        Color color_fg;
+        Color color_bg;
+};
+
 class Text : public Composite {
     public:
         Text(const std::string& txt, short txt_height, Size sz): Composite(sz) {
@@ -128,6 +149,20 @@ class Button : public Composite, public Input::Listener {
 
         void set_text(const std::string& s) { text_composite->set_text(s, size.h * 0.5); }
         
+        void set_enabled(bool e) {
+            if (enabled == e) {
+                return;
+            }
+            if (e) {
+                set_overlay(Color(0, 0, 0, 0));
+                Engine.input()->add_mouse_listener(this, {pos, size});
+            } else {
+                set_overlay(Color(10, 10, 10, 200));
+                Engine.input()->remove_mouse_listener(this);
+            }
+            enabled = e;
+        }
+
         void draw() {
             if (!listener_registered) {
                 if (!txt.empty()) {
@@ -143,6 +178,7 @@ class Button : public Composite, public Input::Listener {
         std::string txt;
         Text* text_composite = nullptr;
         bool listener_registered = false;
+        bool enabled = true;
 };
 
 #endif

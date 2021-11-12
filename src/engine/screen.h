@@ -13,7 +13,7 @@ class Composite {
          };
 
          Composite(Size sz): size(sz) {}
-         virtual ~Composite() {}
+         virtual ~Composite() { delete m_overlay; }
 
          virtual std::vector<Composite*> get_children() { return children; }
          virtual void set_size(Size s) { size = s; }
@@ -40,7 +40,7 @@ class Composite {
              }
          }
 
-         void set_overlay(unsigned color, int num_frames, Listener* listener = nullptr) {
+         void set_overlay(Color color, int num_frames = 1, Listener* listener = nullptr) {
             overlay_listener = listener;
             if (!m_overlay) {
                 m_overlay = new Texture((unsigned)0x0, size);

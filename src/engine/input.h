@@ -9,6 +9,7 @@ class Input {
         class Listener {
             public:
             virtual void mouse_clicked(Point) {};
+            virtual void mouse_moved(Point) {};
             virtual void key_pressed(const std::string& /*key*/) {};
             //virtual void keyReleased(const std::string& /*key*/) {};
         };
@@ -27,6 +28,9 @@ class Input {
                 }
             }
         }
+        
+        void add_move_listener(Input::Listener* l) { mouse_moves.insert(l); }
+        void remove_move_listener(Input::Listener* l) { mouse_moves.erase(mouse_moves.find(l)); };
 
         void add_mouse_listener(Input::Listener* l, Box b, bool temp = false) {
             if (temp) {
@@ -111,6 +115,14 @@ class Input {
                     }
                 }
             }
+
+            Point current_mouse_pos = mouse_pos();
+            if (enabled && current_mouse_pos != last_mouse_pos) {
+                for (auto& l : mouse_moves) {
+                    l->mouse_moved(current_mouse_pos);
+                }
+                last_mouse_pos = current_mouse_pos; 
+            }
                 
             for (auto l : remove_list) {
                 clicks.erase(l);
@@ -124,6 +136,7 @@ class Input {
         }
 
     private:
+        std::set<Input::Listener*> mouse_moves;
         std::map<SDL_Keycode, Input::Listener*> temp_presses;
         std::map<SDL_Keycode, Input::Listener*> presses;
         std::map<SDL_Scancode, Input::Listener*> holds;
@@ -132,6 +145,7 @@ class Input {
         std::vector<Input::Listener*> remove_list;
         bool enabled = true;
         bool clear_temps = false;
+        Point last_mouse_pos;
 
         void addKeyPressListener(Input::Listener* l, const std::string& key, bool temp = false) {
             SDL_Keycode k = SDL_GetKeyFromName(key.c_str());

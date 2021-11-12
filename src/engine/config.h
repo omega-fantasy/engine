@@ -46,6 +46,7 @@ class ConfigParser {
             } else {
                 //std::cout << "Parsing element: " << word << std::endl;
                 val = std::string();
+                std::replace(word.begin(), word.end(), '$', ' ');
                 std::get<0>(val) = word;
             }
         }
