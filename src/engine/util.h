@@ -135,7 +135,8 @@ void update_window();
 void wait(int us);
 long long now();
 
-double random_uniform();
+double random_fast();
+double random_uniform(double min, double max);
 double random_gauss(double mean, double dev);
 
 using AudioHandle = void*;

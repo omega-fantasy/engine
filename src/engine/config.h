@@ -14,6 +14,7 @@ class ConfigParser {
         Node& operator[](const std::string& key) { return std::get<1>(val)[key];}
         operator std::string() const { return std::get<0>(val); }
         operator std::vector<Node>() const { return std::get<2>(val); }
+        bool contains(const std::string& s) { return std::get<1>(val).find(s) != std::get<1>(val).end(); }
 
         Node() { assert(false); }
         Node(std::ifstream& stream) {

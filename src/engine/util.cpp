@@ -88,7 +88,7 @@ long long now() {
     return std::chrono::time_point_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now()).time_since_epoch().count();
 }
 
-double random_uniform() {
+double random_fast() {
     static unsigned long long r = 0;
     static bool init = false;
     if (!init) {
@@ -100,6 +100,13 @@ double random_uniform() {
     }
     r = (r * 48271) % 2147483648;
     return (double)r / 2147483648;
+}
+
+double random_uniform(double min, double max) {
+    static unsigned seed = (unsigned)now();
+    static std::mt19937 generator(seed);
+    std::uniform_real_distribution<double> distribution(min, max);
+    return distribution(generator);
 }
 
 double random_gauss(double mean, double dev) {
