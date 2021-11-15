@@ -20,6 +20,16 @@ class Texture {
             std::fill(pixels_og, pixels_og + s.w * s.h, int(color));
         }
 
+        virtual ~Texture() {
+            delete[] pixels_og;
+            for (int* t : pixels_zoomin) {
+                delete[] t;
+            }
+            for (int* t : pixels_zoomout) {
+                delete[] t;
+            }
+        }
+
         int* pixels(float zoom = 1) {
             if (zoom < 1) {         
                 int idx = 0;
@@ -46,10 +56,10 @@ class Texture {
         void set_id(ID i) { m_id = i; }
 
     protected:
+        int* pixels_og = nullptr;
         ID m_id = 0;
         std::vector<int*> pixels_zoomin;
         std::vector<int*> pixels_zoomout;
-        int* pixels_og = nullptr;
         bool hasTransparency = false;
         int width = 0;
         int height = 0;
@@ -97,7 +107,6 @@ class Texture {
 
 class TextureManager {
     public:
-        const std::string GENERATED_TOKEN = "__";
         TextureManager() { letter_to_texture.resize(1024); }
 
         void register_texture(const std::string& name, Texture* t) {
@@ -123,7 +132,7 @@ class TextureManager {
             }
         }
 
-        Texture* get(Texture::ID id) { 
+        Texture* get(Texture::ID id) {
             if (!id_to_texture[id]) {
                 return nullptr;
             }
@@ -133,10 +142,8 @@ class TextureManager {
         Texture* get(const std::string& name) {
             if (name_to_texture.find(name) != name_to_texture.end()) {
                 return name_to_texture[name]; 
-            } else if (name.find(GENERATED_TOKEN) != std::string::npos) {
-                return get_generated(name);
             }
-            return nullptr;
+            return generate_texture(name);
         }
 
         Texture* get(char letter, int size) {
@@ -146,15 +153,106 @@ class TextureManager {
             return letter_to_texture[size][letter]; 
         }
 
+        constexpr static char DELIMITER = '$';
+        std::string generate_name(const std::string& command, const std::vector<std::string>& params) {
+            std::string ret = command; 
+            for (auto& p : params) {
+                ret += DELIMITER + p;
+            }
+            return ret;
+        }
+
     private:
         Texture* id_to_texture[15000] = {0};
         std::map<std::string, Texture*> name_to_texture;
         std::vector<std::vector<Texture*>> letter_to_texture;
         Texture::ID currentID = 1;
 
-        Texture* get_generated(const std::string& name) {
-            std::string basename = name.substr(0, name.find(GENERATED_TOKEN)); 
-            std::string postfix = name.substr(name.find(GENERATED_TOKEN), name.size() - name.find(GENERATED_TOKEN)); 
+        Texture* generate_texture(const std::string& name) {
+            std::vector<std::string> params = split(name, DELIMITER);
+            if (params.empty()) return nullptr;
+            Texture* t = nullptr;
+            if (params[0] == "blend") {
+                t = get_blended(params[1], params[2], params[3], params[4], params[5]);
+                register_texture(name, t);
+            } else if (params[0] == "border_alpha") {
+                t = get_alpha_bordered(params[1], params[2]); 
+                register_texture(name, t);
+            }
+            return t;
+        }
+
+        Color randomize(Color c, double variance) {
+            double gauss = random_gauss(0, variance);
+            if (gauss < 0) {
+                return c - (unsigned char)(255 * -gauss);
+            } else {
+                return c + (unsigned char)(255 * gauss);
+            }
+            return 0;
+        }
+
+        Texture* get_blended(const std::string& base, const std::string& top, const std::string& right, const std::string& bottom, const std::string& left) {
+            if (name_to_texture.find(base) == name_to_texture.end()) {
+                return nullptr;
+            }
+            Texture* t1 = name_to_texture[base];
+            Size s = t1->size();
+            Texture* gen_texture = new Texture(0x0, s);
+            std::memcpy(gen_texture->pixels(), t1->pixels(), s.w * s.h * sizeof(int));
+            
+            const double variance = 0.03;
+            int depth = 2;
+            int max_depth = 3;
+            Color* target = (Color*)gen_texture->pixels();
+            if (!left.empty()) {
+                Color* src = (Color*)name_to_texture[left]->pixels();
+                for (int y = 0; y < s.h; y++) {
+                    for (int x = 0; x < depth; x++) {
+                        target[y * s.w + x] = randomize(src[(s.h-1) * (s.w-1) / 4], variance);
+                    }
+                    depth += random_uniform(-1, 2);
+                    if (depth < 1) depth = 1;
+                    if (depth > max_depth) depth = max_depth;
+                }
+            }
+            if (!right.empty()) {
+                Color* src = (Color*)name_to_texture[right]->pixels();
+                for (int y = 0; y < s.h; y++) {
+                    for (int x = s.w-1-depth; x < s.w; x++) {
+                        target[y * s.w + x] = randomize(src[(s.h-1) * (s.w-1) / 4], variance);
+                    }
+                    depth += random_uniform(-1, 2);
+                    if (depth < 1) depth = 1;
+                    if (depth > max_depth) depth = max_depth;
+                }
+            }
+            if (!top.empty()) {
+                Color* src = (Color*)name_to_texture[top]->pixels();
+                for (int x = 0; x < s.w; x++) {
+                    for (int y = 0; y < depth; y++) {
+                        target[y * s.w + x] = randomize(src[(s.h-1) * (s.w-1) / 4], variance);
+                    }
+                    depth += random_uniform(-1, 2);
+                    if (depth < 1) depth = 1;
+                    if (depth > max_depth) depth = max_depth;
+                }
+            }
+            if (!bottom.empty()) {
+                Color* src = (Color*)name_to_texture[bottom]->pixels();
+                for (int x = 0; x < s.w; x++) {
+                    for (int y = s.h-1-depth; y < s.h; y++) {
+                        target[y * s.w + x] = randomize(src[(s.h-1) * (s.w-1) / 4], variance);
+                    }
+                    depth += random_uniform(-1, 2);
+                    if (depth < 1) depth = 1;
+                    if (depth > max_depth) depth = max_depth;
+                }
+            }
+            return gen_texture;
+        }
+
+        Texture* get_alpha_bordered(const std::string& basename, const std::string& postfix) {
             if (name_to_texture.find(basename) == name_to_texture.end()) {
                 return nullptr;
             }
@@ -189,20 +287,12 @@ class TextureManager {
                     pixels[x * s.w + s.w - 2] = pixels[x * s.w + s.w - 2] - d;
                 }
             }
-            register_texture(name, gen_texture);
             return gen_texture;
         }
 
         Texture* generate(Size s, Color c, double variance) {
             Color* img = new Color[s.w * s.h];
-            std::for_each(img, img+s.w*s.h, [&](Color& p){
-                double gauss = random_gauss(0, variance);
-                if (gauss < 0) {
-                    p = c - (unsigned char)(255 * -gauss);
-                } else {
-                    p = c + (unsigned char)(255 * gauss);
-                }
-            });
+            std::for_each(img, img+s.w*s.h, [&](Color& p){ p = randomize(c, variance); });
             return new Texture(s, img);
         }
 

@@ -4,7 +4,6 @@
 #include "engine.h"
 #include "db.h"
 #include "config.h"
-#include <iostream>
 
 class MapGen {
     public:
@@ -45,9 +44,10 @@ class MapGen {
             };
 
             struct Elevation {
-                Elevation(double p, bool b): perc(p), blocking(b) {}
+                Elevation(double p, bool b, bool bl): perc(p), blocking(b), blend(bl) {}
                 double perc = 0.0;
                 bool blocking = false;
+                bool blend = false;
                 std::vector<Biome> biomes;
                 std::vector<char> temperatures;
             };
@@ -55,7 +55,7 @@ class MapGen {
             Config() {
                 auto& configfile = Engine.config()->get("mapgen");
                 for (auto& elevation : configfile["elevations"]) {
-                    elevations.emplace_back(std::stod(elevation["quantity"]), (bool)std::stoi(elevation["blocking"]));
+                    elevations.emplace_back(std::stod(elevation["quantity"]), (bool)std::stoi(elevation["blocking"]), (bool)std::stoi(elevation["blend"]));
                     auto& new_elevation = elevations.back();
                     for (auto& biome : elevation["biomes"]) {
                         new_elevation.biomes.emplace_back(biome["name"]);
@@ -80,6 +80,58 @@ class MapGen {
             short sample_factor = 0;
             short sample_distance = 0;
         };
+
+        static void post_process(Config& config, Size map_size) {
+            auto map = Engine.map();
+            std::map<Texture::ID, std::set<Texture::ID>> blend_map; 
+            std::map<Texture::ID, std::string> name_map; 
+            std::vector<Texture::ID> prev_ids;
+            for (Config::Elevation& elevation : config.elevations) {
+                std::vector<Texture::ID> prev_ids_temp;
+                for (auto& biome : elevation.biomes) {
+                    if (elevation.blend) {
+                        for (auto prev_id : prev_ids) {
+                            blend_map[biome.id()].insert(prev_id);
+                        }
+                        for (auto& biome2 : elevation.biomes) {
+                            if (biome2.id() != biome.id()) {
+                                blend_map[biome.id()].insert(biome2.id());
+                            }
+                        }
+                    }
+                    name_map[biome.id()] = biome.name;
+                    prev_ids_temp.push_back(biome.id());
+                }
+                prev_ids = prev_ids_temp;
+            }
+            for (short y_map = 0; y_map < map_size.h; y_map++) {
+                for (short x_map = 0; x_map < map_size.w; x_map++) {
+                    Texture::ID current_id = map->get_ground({x_map, y_map});
+                    if (blend_map.find(current_id) != blend_map.end()) {
+                        std::set<Texture::ID>& blend_set = blend_map[current_id];
+                        std::vector<std::string> params(5);
+                        bool blend = false;
+                        if (y_map > 0 && blend_set.find(map->get_ground({x_map+0, y_map-1})) != blend_set.end()) {
+                            params[1] = name_map[map->get_ground({x_map+0, y_map-1})]; blend = true;
+                        }
+                        if (x_map < map_size.w-1 && blend_set.find(map->get_ground({x_map+1, y_map+0})) != blend_set.end()) {
+                            params[2] = name_map[map->get_ground({x_map+1, y_map-0})]; blend = true;
+                        }
+                        if (y_map < map_size.h-1 && blend_set.find(map->get_ground({x_map+0, y_map+1})) != blend_set.end()) {
+                            params[3] = name_map[map->get_ground({x_map+0, y_map+1})]; blend = true;
+                        }
+                        if (x_map > 0 && blend_set.find(map->get_ground({x_map-1, y_map+0})) != blend_set.end()) {
+                            params[4] = name_map[map->get_ground({x_map-1, y_map+0})]; blend = true;
+                        }
+                        if (blend) {
+                            params[0] = name_map[current_id];
+                            std::string n = Engine.textures()->generate_name("blend", params);
+                            map->set_ground(n, {x_map, y_map}, false);
+                        }
+                    }
+                }
+            }
+        }
 
         struct Anchor {
             Anchor(Point p, double pc, char t): pos(p), perc(pc), temp(t) {}
@@ -180,7 +232,7 @@ class MapGen {
                                     }
                                     Config::Biome& biome = elevation.biomes[biome_index];
                                     if (biome.max_height > 0) {
-                                        char height = 1 + max_height * (total_val - height_cutoff) / (1 - height_cutoff);
+                                        char height = max_height * (total_val - height_cutoff) / (1 - height_cutoff);
                                         heightmap->get(x_map, y_map) = height < 0 ? 0 : height;
                                     }
                                     tiles_ground->get(x_map, y_map) = elevation.blocking ? -biome.id() : biome.id();
@@ -196,12 +248,11 @@ class MapGen {
                                     break;
                                 }
                             }
-                            assert(tiles_ground->get(x_map, y_map));
                         }
                     }
                 }
             }
-       
+
             for (short y_map = 1; y_map < map_size.h - wall_height; y_map++) {
                 for (short x_map = 1; x_map < map_size.w - 1; x_map++) {
                     std::string postfix = "";
@@ -211,7 +262,7 @@ class MapGen {
                     if (heightmap->get(x_map, y_map) > heightmap->get(x_map, y_map+1)) {
                         postfix += "bottom";
                         for (int i = 1; i <= wall_height; i++) { 
-                            map->set_ground(mountain_biome.name_wall+"__left_right", {x_map+0, y_map+i}, true);
+                            map->set_ground(mountain_biome.name_wall, {x_map+0, y_map+i}, true);
                         }
                     }
                     if (heightmap->get(x_map, y_map) > heightmap->get(x_map-1, y_map)) {
@@ -221,10 +272,13 @@ class MapGen {
                         postfix += "right";
                     }
                     if (!postfix.empty()) {
-                        map->set_ground(mountain_biome.name + "__" + postfix, {x_map, y_map}, false);
-                    } 
+                        std::string n = Engine.textures()->generate_name("border_alpha", {mountain_biome.name, postfix});
+                        map->set_ground(n, {x_map, y_map}, false);
+                    }
                 }
             }
+
+            post_process(config, map_size);
         }
 };
 

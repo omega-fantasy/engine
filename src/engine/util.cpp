@@ -6,14 +6,15 @@
 #include <filesystem>
 #include <chrono>
 #include <random>
+#include <iostream>
 
 std::pair<Color*, Size> load_bmp(const std::string& filepath) {
     SDL_Surface* img = SDL_LoadBMP(filepath.c_str());
     Size s = {img->w, img->h};
-    Color* out = new Color[s.w * s.h];
-    std::memcpy(out, img->pixels, s.w * s.h * sizeof(Color)); 
+    unsigned* out = new unsigned[s.w * s.h];
+    std::memcpy(out, img->pixels, s.w * s.h * sizeof(unsigned)); 
     SDL_FreeSurface(img);
-    return {out, s};
+    return {(Color*)out, s};
 }
 
 std::vector<std::pair<Color*, Size>> load_letters(const std::string& fontpath, int height, Color color, char start, char end) {
@@ -60,6 +61,21 @@ std::string filename(const std::string& filepath) {
     }
     return f;
 }
+
+std::vector<std::string> split(const std::string &s, char delim) {
+    std::vector<std::string> result;
+    std::stringstream ss(s);
+    std::string item;
+    while (std::getline(ss, item, delim)) {
+        result.push_back(item);
+    }
+    if (s.back() == delim) {
+        result.emplace_back();
+    }
+    return result;
+}
+
+void print(const std::string& s) { std::cout << s << std::endl; }
 
 static SDL_Window* window = nullptr;
 

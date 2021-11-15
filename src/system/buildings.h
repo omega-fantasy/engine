@@ -13,7 +13,7 @@ class Buildings {
         constexpr static int MAX_BUILDINGS_PER_TOWN = 64;
         
         struct Type {
-            Type() {}
+            Type(): name(""), price(0) {}
             Type(const std::string& n, int p): name(n), price(p) {}
             std::string name;
             int price;

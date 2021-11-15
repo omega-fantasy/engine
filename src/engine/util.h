@@ -93,22 +93,22 @@ struct Color {
             default: return red;
         }
     }
-    unsigned char blue;
-    unsigned char green;
-    unsigned char red;
-    unsigned char alpha;
+    unsigned char blue = 0;
+    unsigned char green = 0;
+    unsigned char red = 0;
+    unsigned char alpha = 0;
 };
 
 struct StringBase{};
 template<int N> struct String : StringBase {
     String() {}
     String(const char* c) { strcpy(mem, c); }
-    String(const std::string& c) { strcpy(mem, c.c_str()); }
+    String(const std::string& c) { strncpy(mem, c.c_str(), c.size()); }
     String(const String<N>& c) { memcpy(mem, c.mem, N); }
     String(const String<N>&&) = delete;
     String<N>& operator=(const String<N>&&) = delete;
     String<N>& operator=(const String<N>& c) { memcpy(mem, c.mem, N); return *this;}
-    String<N>& operator=(const std::string& c) { strcpy(mem, c.c_str()); return *this;}
+    String<N>& operator=(const std::string& c) { strncpy(mem, c.c_str(), c.size()); return *this;}
     String<N>& operator=(const char* c) { strcpy(mem, c); return *this;}
     std::string toStdString() { return std::string(mem); }
     char mem[N] = {0};
@@ -128,6 +128,8 @@ std::vector<std::pair<Color*, Size>> load_letters(const std::string& fontpath, i
 
 std::vector<std::string> filelist(const std::string& path, const std::string& filter = "");
 std::string filename(const std::string& filepath);
+std::vector<std::string> split(const std::string& s, char delim);
+void print(const std::string& s);
 
 Color* create_window(Size s, bool fullscreen);
 void update_window();
