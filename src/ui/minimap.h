@@ -17,7 +17,7 @@ class MiniMap : public Composite, Input::Listener, Tilemap::Listener {
         void create() {
             auto map = Engine.map();
             Size map_size = map->tilemap_size();
-            int* pixels = m_texture->pixels();
+            Color* pixels = m_texture->pixels();
             for (short y = 0; y < size.h; y++) { 
                 for (short x = 0; x < size.w; x++) {
                     Point current_pos(x * ((double)map_size.w / size.w), y * ((double)map_size.h / size.h));
@@ -70,11 +70,11 @@ class MiniMap : public Composite, Input::Listener, Tilemap::Listener {
                 s = {3, 3};
             }
             Texture* t = new Texture((unsigned)0x00000000, {s.w, s.h});
-            int* pixels = t->pixels();
+            Color* pixels = t->pixels();
             for (short y = 0; y < s.h; y++) {
                 for (short x = 0; x < s.w; x++) {
                     if (x == 0 || y == 0 || y == s.h - 1 || x == s.w - 1) {
-                        pixels[y * s.w + x] = static_cast<int>(0xFFFF0000);
+                        pixels[y * s.w + x] = Color(255, 0, 0);
                     }
                 }
             }

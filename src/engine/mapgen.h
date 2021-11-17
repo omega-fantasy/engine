@@ -94,9 +94,10 @@ class MapGen {
                             blend_map[biome.id()].insert(prev_id);
                         }
                         for (auto& biome2 : elevation.biomes) {
-                            if (biome2.id() != biome.id()) {
-                                blend_map[biome.id()].insert(biome2.id());
+                            if (biome2.id() == biome.id()) {
+                                break;
                             }
+                            blend_map[biome.id()].insert(biome2.id());
                         }
                     }
                     name_map[biome.id()] = biome.name;

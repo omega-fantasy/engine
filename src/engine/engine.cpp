@@ -33,6 +33,7 @@ void GameEngine::save_state(const char* filename) {
  
 void GameEngine::load_state(const char* filename) {
     m_db->read(filename);
+    m_textures->reinit();
     m_map->create_map(m_map->get_size());
 }
 

@@ -57,6 +57,7 @@ struct Size {
     short w;
     short h;
     Size operator*(const Size& s) { return Size(w * s.w, h * s.h); }
+    Size operator*(const float d) { return Size(d * w, d * h); }
     Size operator/(const Size& s) { return Size(w / s.w, h / s.h); }
 };
 

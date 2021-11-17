@@ -166,7 +166,7 @@ inline void Composite::draw() {
         Color new_color;
         new_color = overlay_colors.back();
         new_color.alpha = overlay_colors.back().alpha; // to make static analysis shut up
-        int* pixels = m_overlay->pixels();
+        Color* pixels = m_overlay->pixels();
         std::fill(pixels, pixels + m_overlay->size().w * m_overlay->size().h, int(new_color));
         overlay_colors.pop_back();
         if (overlay_colors.empty()) {
