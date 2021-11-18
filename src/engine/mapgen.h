@@ -4,6 +4,8 @@
 #include "engine.h"
 #include "db.h"
 #include "config.h"
+#include "texture.h"
+#include "tilemap.h"
 
 class MapGen {
     public:

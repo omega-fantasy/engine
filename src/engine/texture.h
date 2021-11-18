@@ -50,7 +50,9 @@ class TextureManager {
         Color randomize(Color c, double variance);
         Texture* get_blended(const std::string& base, const std::string& top, const std::string& right, const std::string& bottom, const std::string& left);
         Texture* get_alpha_bordered(const std::string& basename, const std::string& postfix);
-        Texture* generate(Size s, Color c, double variance);
+        Texture* generate_tiled(Size s, Color c, double variance, int tiles_horizontal, int tiles_vertical, double offset);
+        Texture* generate_building(Size tile_size, Size building_size, const std::string& facade, const std::string& roof, const std::vector<std::pair<std::string, Point>>& objects);
+        Texture* generate_noise(Size s, Color c, double variance);
         void init_letters(int height, Color color = {255, 255, 255});
 };
 

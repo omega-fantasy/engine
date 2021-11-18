@@ -88,9 +88,26 @@ TextureManager::TextureManager() {
     letter_to_texture.resize(1024);
     auto& config = Engine.config()->get("textures");
     for (auto& g : config["generate"]) {
-        Color c(std::stoi(g["red"]), std::stoi(g["green"]), std::stoi(g["blue"]));
         Size s(std::stoi(Engine.config()->get("settings")["tilesize"]["width"]), std::stoi(Engine.config()->get("settings")["tilesize"]["height"]));
-        register_texture(g["name"], generate(s, c, std::stod(g["variance"])));
+        std::string type = g["type"];
+        Texture* t = nullptr;
+        if (type == "building") {
+            std::vector<std::pair<std::string, Point>> objects;
+            for (auto& object : g["objects"]) {
+                objects.emplace_back(object["name"], Point(std::stoi(object["x"]), std::stoi(object["y"])));
+            }
+            t = generate_building(s, Size(std::stoi(g["width"]), std::stoi(g["height"])), g["facade"], g["roof"], objects);
+        } else {
+            Color c(std::stoi(g["red"]), std::stoi(g["green"]), std::stoi(g["blue"]));
+            if (type == "noise") {
+                t = generate_noise(s, c, std::stod(g["variance"]));
+            } else if (type == "tiled") {
+                t = generate_tiled(s, c, std::stod(g["variance"]), std::stoi(g["tiles_horizontal"]), std::stoi(g["tiles_vertical"]), std::stod(g["offset"]));
+            }
+        }
+        if (t) {
+            register_texture(g["name"], t);
+        }
     }
 }
 
@@ -114,7 +131,6 @@ void TextureManager::reinit() {
         if (name_to_texture.find(name) == name_to_texture.end()) {
             t = generate_texture(name);
             name_to_texture[name] = t;
-            //print("Adding texture="+name+" id="+std::to_string(id));
         } else {
             t = name_to_texture[name];
         }
@@ -127,7 +143,7 @@ void TextureManager::register_texture(const std::string& name, Texture* t) {
     t->m_id = currentID;
     id_to_texture[currentID] = t;
     name_to_texture[name] = t;
-    auto table = Engine.db()->get_table<String<256>>("textures")->add(currentID, name);
+    Engine.db()->get_table<String<256>>("textures")->add(currentID, name);
     currentID++;
 }
 
@@ -203,8 +219,8 @@ Texture* TextureManager::get_blended(const std::string& base, const std::string&
     std::memcpy(gen_texture->pixels(), t1->pixels(), s.w * s.h * sizeof(int));
     
     const double variance = 0.03;
-    int depth = 2;
-    int max_depth = 3;
+    int depth = 0.125 * s.w;
+    int max_depth = 0.2 * s.w;
     Color* target = (Color*)gen_texture->pixels();
     if (!left.empty()) {
         Color* src = (Color*)name_to_texture[left]->pixels();
@@ -291,7 +307,51 @@ Texture* TextureManager::get_alpha_bordered(const std::string& basename, const s
     return gen_texture;
 }
 
-Texture* TextureManager::generate(Size s, Color c, double variance) {
+Texture* TextureManager::generate_tiled(Size s, Color c, double variance, int tiles_horizontal, int tiles_vertical, double offset) {
+    Color* img = new Color[s.w * s.h];
+    Color color_sep = c - (unsigned char)30;
+    Size tile_size(s.w / tiles_horizontal, s.h / tiles_vertical);
+    int offset_x = 0;
+    for (int y = 0; y < s.h; y++) {
+        if (y % tile_size.h == 0) {
+            offset_x = (int)(offset_x + offset * tile_size.w) % tile_size.w;
+        }
+        for (int x = 0; x < s.w; x++) {
+            bool sep = y % tile_size.h == 0 || (x + offset_x) % tile_size.w == 0;
+            img[y * s.w + x] = sep ? randomize(color_sep, 0.01) : randomize(c, variance);
+        }
+    }
+    return new Texture(s, img);
+}
+
+Texture* TextureManager::generate_building(Size tile_size, Size building_size, const std::string& facade, const std::string& roof, const std::vector<std::pair<std::string, Point>>& objects) {
+    constexpr int roof_height = 2;
+    Size s(building_size.w * tile_size.w, (building_size.h + roof_height) * tile_size.h);
+    Color* img = new Color[s.w * s.h];
+    Color* pixels_facade = get(facade)->pixels();
+    Color* pixels_roof = get(roof)->pixels();
+    for (int y = 0; y < s.h; y++) {
+        Color* src = y < roof_height * tile_size.h ? pixels_roof : pixels_facade;
+        for (int x = 0; x < s.w; x++) {
+            img[y * s.w + x] = src[(y % tile_size.h) * tile_size.w + (x % tile_size.w)];
+        }
+    }
+    for (auto& object : objects) {
+        Texture* t = get(object.first);
+        Color* src = t->pixels();
+        Point pos = object.second;
+        Size object_size = t->size();
+        int offset = pos.x * tile_size.w + (pos.y + roof_height) * tile_size.h * s.w;
+        for (int y = 0; y < object_size.h; y++) {
+            for (int x = 0; x < object_size.w; x++) {
+                img[offset + y * s.w + x] = src[y * object_size.w + x];
+            }
+        }
+    }
+    return new Texture(s, img);
+}
+
+Texture* TextureManager::generate_noise(Size s, Color c, double variance) {
     Color* img = new Color[s.w * s.h];
     std::for_each(img, img+s.w*s.h, [&](Color& p){ p = randomize(c, variance); });
     return new Texture(s, img);
