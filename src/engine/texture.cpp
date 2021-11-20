@@ -96,7 +96,7 @@ TextureManager::TextureManager() {
             for (auto& object : g["objects"]) {
                 objects.emplace_back(object["name"], Point(std::stoi(object["x"]), std::stoi(object["y"])));
             }
-            t = generate_building(s, Size(std::stoi(g["width"]), std::stoi(g["height"])), g["facade"], g["roof"], objects);
+            t = generate_building(s, Size(std::stoi(g["width"]), std::stoi(g["height"])), std::stoi(g["depth"]), g["facade"], g["roof"], objects);
         } else {
             Color c(std::stoi(g["red"]), std::stoi(g["green"]), std::stoi(g["blue"]));
             if (type == "noise") {
@@ -324,16 +324,22 @@ Texture* TextureManager::generate_tiled(Size s, Color c, double variance, int ti
     return new Texture(s, img);
 }
 
-Texture* TextureManager::generate_building(Size tile_size, Size building_size, const std::string& facade, const std::string& roof, const std::vector<std::pair<std::string, Point>>& objects) {
-    constexpr int roof_height = 2;
-    Size s(building_size.w * tile_size.w, (building_size.h + roof_height) * tile_size.h);
+Texture* TextureManager::generate_building(Size tile_size, Size building_size, short depth, const std::string& facade, const std::string& roof, const std::vector<std::pair<std::string, Point>>& objects) {
+    constexpr int shadow_width = 1;
+    Size s((building_size.w + shadow_width) * tile_size.w, (building_size.h + depth) * tile_size.h);
     Color* img = new Color[s.w * s.h];
     Color* pixels_facade = get(facade)->pixels();
     Color* pixels_roof = get(roof)->pixels();
     for (int y = 0; y < s.h; y++) {
-        Color* src = y < roof_height * tile_size.h ? pixels_roof : pixels_facade;
+        Color* src = y < depth * tile_size.h ? pixels_roof : pixels_facade;
         for (int x = 0; x < s.w; x++) {
-            img[y * s.w + x] = src[(y % tile_size.h) * tile_size.w + (x % tile_size.w)];
+            if (x < building_size.w * tile_size.w) {
+                img[y * s.w + x] = src[(y % tile_size.h) * tile_size.w + (x % tile_size.w)];
+            } else if (y / tile_size.h > building_size.h - 1 &&
+                       x % tile_size.w < tile_size.w / 2 && 
+                       (y < s.h - tile_size.h || x % tile_size.w < tile_size.h - y % tile_size.h)) {
+                img[y * s.w + x] = Color(0, 0, 0, 100);
+            }
         }
     }
     for (auto& object : objects) {
@@ -341,7 +347,7 @@ Texture* TextureManager::generate_building(Size tile_size, Size building_size, c
         Color* src = t->pixels();
         Point pos = object.second;
         Size object_size = t->size();
-        int offset = pos.x * tile_size.w + (pos.y + roof_height) * tile_size.h * s.w;
+        int offset = pos.x * tile_size.w + pos.y  * tile_size.h * s.w;
         for (int y = 0; y < object_size.h; y++) {
             for (int x = 0; x < object_size.w; x++) {
                 img[offset + y * s.w + x] = src[y * object_size.w + x];

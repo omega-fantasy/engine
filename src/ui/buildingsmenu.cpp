@@ -68,7 +68,7 @@ void BuildingsMenu::tile_clicked(Point p) {
         if (active_button->name == "destroy") {
             System.buildings()->destroy(p);
         } else if (active_button->name == "new town") {
-            bool success = System.buildings()->create_town(p) && Engine.map()->set_tile("shop", p);
+            bool success = System.buildings()->create_town(p) && Engine.map()->set_tile("town", p);
             sound = success ? "build" : "error";
             if (success) {
                 Size s = {Engine.map()->get_size().w * 0.75, Engine.map()->get_size().h * 0.25};
@@ -80,7 +80,7 @@ void BuildingsMenu::tile_clicked(Point p) {
             sound = System.buildings()->create(active_button->name, p) ? "build" : "error";
         }
         if (sound == "build") {
-            //set_mode(nullptr);
+            set_mode(nullptr);
         } else {
             Engine.audio()->play_sound(sound);
         }
@@ -105,7 +105,7 @@ void BuildingsMenu::set_mode(BuildButton* button) {
         active_button = button;
         active_button->set_texture(new Texture(color_active, button_size));
         if (active_button->name == "new town") {
-            Engine.map()->set_cursor_texture("shop");
+            Engine.map()->set_cursor_texture("town");
         } else {
             Engine.map()->set_cursor_texture(active_button->name);
         }
