@@ -120,14 +120,14 @@ double random_fast() {
 
 double random_uniform(double min, double max) {
     static unsigned seed = (unsigned)now();
-    static std::mt19937 generator(seed);
+    static std::default_random_engine generator(seed);
     std::uniform_real_distribution<double> distribution(min, max);
     return distribution(generator);
 }
 
 double random_gauss(double mean, double dev) {
     static unsigned seed = (unsigned)now();
-    static std::mt19937 generator(seed);
+    static std::default_random_engine generator(seed);
     std::normal_distribution<double> distribution(mean, dev);
     return distribution(generator);
 }

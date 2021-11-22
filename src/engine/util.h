@@ -68,6 +68,7 @@ struct Box {
     Point a;
     Point b;
     Point center() { return {a.x + 0.5 * (b.x - a.x), a.y + 0.5 * (b.y - a.y)}; }
+    Size size() {return Size(std::abs(b.x - a.x), std::abs(b.y - a.y));}
     bool inside(Point p) { return p.x >= a.x && p.y >= a.y && p.x <= b.x && p.y <= b.y; }
 };
 
