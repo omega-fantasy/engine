@@ -19,8 +19,8 @@ GameEngine::GameEngine() {
 void GameEngine::init(Size screen_size) {
     m_db = new Database("database");
     m_input = new Input();
-    m_audio = new AudioPlayer();
     m_screen = new Screen(screen_size);
+    m_audio = new AudioPlayer();
     m_textures = new TextureManager();
     m_map = new Tilemap({0, 0});
     m_sim = new Simulation();

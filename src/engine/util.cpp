@@ -2,11 +2,11 @@
 
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_ttf.h>
-#include <SDL2/SDL_mixer.h>
 #include <filesystem>
 #include <chrono>
 #include <random>
 #include <iostream>
+#include <sstream>
 
 std::pair<Color*, Size> load_bmp(const std::string& filepath) {
     SDL_Surface* img = SDL_LoadBMP(filepath.c_str());
@@ -81,7 +81,7 @@ static SDL_Window* window = nullptr;
 
 Color* create_window(Size s, bool fullscreen) {
     if (!window) {
-        SDL_Init(SDL_INIT_VIDEO);
+        SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO);
         window = SDL_CreateWindow("", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, s.w, s.h, 0);
         if (fullscreen) {
             SDL_SetWindowFullscreen(window, SDL_WINDOW_FULLSCREEN);
@@ -131,23 +131,61 @@ double random_gauss(double mean, double dev) {
     std::normal_distribution<double> distribution(mean, dev);
     return distribution(generator);
 }
-           
-AudioHandle load_wav(const std::string& filepath, bool music) {
-    Mix_Init(MIX_INIT_OGG);
-    Mix_OpenAudio(MIX_DEFAULT_FREQUENCY, MIX_DEFAULT_FORMAT, 2, 1024);
-    Mix_Volume(-1, 64);
-    if (music) {
-        return Mix_LoadMUS(filepath.c_str());
+
+
+struct AudioFile {
+    SDL_AudioSpec spec;
+    Uint32 length;
+    Uint8* buffer;
+    int length_remaining = 0;
+    bool loop;
+};
+
+static std::set<AudioFile*> queued_audio;
+static SDL_AudioFormat audio_format = AUDIO_S16LSB;
+static SDL_AudioDeviceID dev;   
+
+void audio_callback(void *userdata, Uint8 *stream, int len) {
+    SDL_memset(stream, 0, len);
+    std::vector<AudioFile*> remove;
+    for (auto& audio : queued_audio) {
+        unsigned play_len = audio->length_remaining > len ? len : audio->length_remaining;
+        SDL_MixAudioFormat(stream, audio->buffer + audio->length - audio->length_remaining, audio_format, play_len, 50);
+        audio->length_remaining -= play_len;
+        if (!audio->length_remaining) {
+            remove.push_back(audio);
+        } 
     }
-    return Mix_LoadWAV(filepath.c_str()); 
+    for (auto& audio : remove) {
+        queued_audio.erase(audio);
+    }
+}
+
+AudioHandle load_wav(const std::string& filepath, bool music) {
+    static bool audio_init = false;
+    if (!audio_init) {
+        SDL_AudioSpec want, have;
+        SDL_memset(&want, 0, sizeof(want)); /* or SDL_zero(want) */
+        want.freq = 48000;
+        want.format = audio_format;
+        want.channels = 2;
+        want.samples = 1024;
+        want.callback = audio_callback;
+        dev = SDL_OpenAudioDevice(NULL, 0, &want, &have, SDL_AUDIO_ALLOW_ANY_CHANGE);
+        SDL_PauseAudioDevice(dev, 0);
+        audio_init = true;
+    }
+    AudioFile* handle = new AudioFile();
+    handle->loop = music;
+    SDL_LoadWAV(filepath.c_str(), &handle->spec, &handle->buffer, &handle->length);
+    return handle;
 }
 
 void play_wav(AudioHandle audio, bool music) {
-    if (music) {
-        //Mix_VolumeMusic(volume);
-        Mix_PlayMusic((Mix_Music*)audio, -1); 
-    } else {
-        Mix_PlayChannel(-1, (Mix_Chunk*)audio, 0);
+    AudioFile* handle = (AudioFile*)audio;
+    if (!handle->length_remaining && queued_audio.find(handle) == queued_audio.end()) {
+        handle->length_remaining = handle->length;
+        queued_audio.insert(handle);
     }
 }
         

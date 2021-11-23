@@ -157,8 +157,6 @@ static Texture* generate_plant(Size s, Color color_crown, Color color_trunk, dou
     std::fill(img, img + s.w * s.h, int(Color(0,0,0,0)));
     Box trunk(Point(s.w * (1 - trunk_width) / 2 - 1, s.h * (1 - trunk_height) - 1), Point(s.w * trunk_width + s.w * (1 - trunk_width) / 2 - 1, 1.0 * s.h - 1));
     Box crown(Point(s.w * (1 - crown_width) / 2 - 1, s.h * (1 - crown_height) - trunk.size().h - 1), Point(s.w * crown_width  + s.w * (1 - crown_height) / 2 - 1, 1.0 * s.h - 1 - trunk.size().h));
-    print("Trunk: " + std::to_string(trunk.a.x) + "," + std::to_string(trunk.a.y) + " " + std::to_string(trunk.b.x) + "," + std::to_string(trunk.b.y));
-    print("Crown: " + std::to_string(crown.a.x) + "," + std::to_string(crown.a.y) + " " + std::to_string(crown.b.x) + "," + std::to_string(crown.b.y));
 
     for (int y = 0; y < s.h; y++) {
         if (y >= crown.a.y && y <= crown.b.y) {
@@ -167,15 +165,15 @@ static Texture* generate_plant(Size s, Color color_crown, Color color_trunk, dou
             if (trunk.size().h == 0) {
                 base += 0.1;
             }
-            short x_range = base * crown.size().w + (1 - base) * crown.size().w * d + (int)random_uniform(0, 2);
+            short x_range = base * crown.size().w + (1 - base) * crown.size().w * d + (int)random_uniform(0, 1 + 0.1 * s.w);
             for (int x = s.w / 2 - x_range / 2; x < s.w / 2 + x_range / 2; x++) {
-                unsigned char d = 130 * ((double)crown.center().distance({x, y}) / (crown.size().w / 2 + crown.size().h / 2));
+                unsigned char d = 150 * ((double)crown.center().distance({x, y}) / (crown.size().w / 2 + crown.size().h / 2));
                 img[y * s.w + x] = randomize(color_crown - d, variance);
             }
         } else if (y >= trunk.a.y && y <= trunk.b.y) {
             double d = 1 - ((double)std::abs(y - trunk.center().y) / (trunk.size().h /2));
             double base = y > trunk.center().y ? 0.7 : 0.35;
-            short x_range = base * trunk.size().w + (1 - base) * trunk.size().w * d + (int)random_uniform(0, 2);
+            short x_range = base * trunk.size().w + (1 - base) * trunk.size().w * d + (int)random_uniform(0, 1 + 0.1 * s.w);
             for (int x = s.w / 2 - x_range / 2; x < s.w / 2 + x_range / 2; x++) {
                 unsigned char d = 160 * ((double)trunk.center().distance({x, y}) / (trunk.size().w / 2 + trunk.size().h / 2));
                 img[y * s.w + x] = randomize(color_trunk - d, variance);

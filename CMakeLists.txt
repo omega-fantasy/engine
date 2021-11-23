@@ -1,10 +1,10 @@
 cmake_minimum_required (VERSION 3.13)
 project (engine)
-add_executable(engine)
-add_subdirectory(src)
 
 if (UNIX)
 include_directories(. src)
+add_executable(engine)
+add_subdirectory(src)
 
 set(CMAKE_CXX_CPPCHECK 
     cppcheck
@@ -20,9 +20,10 @@ set(CMAKE_CXX_CLANG_TIDY
     clang-tidy;
     -extra-arg=-I..;
     -extra-arg=-I.;
-    -checks='alpha*,clang-analyzer-*,bugprone-*,misc-*,-bugprone-integer-division,-bugprone-narrowing-conversions,-misc-definitions-in-headers,-misc-unused-using-decls,-clang-analyzer-cplusplus.NewDeleteLeaks,-misc-non-private-member-variables-in-classes,-misc-no-recursion;
+    -checks='alpha*,clang-analyzer-*,bugprone-*,misc-*,-bugprone-integer-division,-bugprone-narrowing-conversions,-misc-definitions-in-headers,-misc-unused-using-decls,-clang-analyzer-cplusplus.NewDeleteLeaks,-misc-non-private-member-variables-in-classes,-misc-no-recursion,-bugprone-macro-parentheses,-bugprone-unhandled-self-assignment,-bugprone-reserved-identifier;
     -extra-arg=-std=c++17;
     -header-filter=.*;)
+
 
 
 if (DBG)
@@ -31,7 +32,6 @@ target_link_options(engine PRIVATE
     -fuse-ld=lld
     -lSDL2 
     -lSDL2_ttf
-    -lSDL2_mixer
     -fsanitize=address 
     -fsanitize=undefined
     -fsanitize=bounds
@@ -74,12 +74,6 @@ target_compile_options(engine PRIVATE
     -fsanitize=float-divide-by-zero 
     -fsanitize=float-cast-overflow 
     -fsanitize=integer
-#    -fsanitize-no-recover
-#    -fsanitize=safe-stack 
-#    -fsanitize=bounds-strict 
-    #-fstack-protector-strong 
-    -fPIE 
-    -fstack-clash-protection
 )
 
 endif (DBG)
@@ -88,7 +82,7 @@ if (OPT)
 
 target_compile_options(engine PRIVATE
     -std=c++17
-#    -g3 
+    -g3
     -fno-omit-frame-pointer
     -fno-exceptions
     -fno-rtti
@@ -105,13 +99,12 @@ target_link_options(engine PRIVATE
     -fuse-ld=lld
     -lSDL2 
     -lSDL2_ttf
-    -lSDL2_mixer
     -flto
     -Wl,-O3
     -Wl,--gc-sections
     -Wl,--strip-all 
     -Wl,--icf=all  
-    -Wl,--lto-O3  
+    -Wl,--lto-O3
     )
 
 endif (OPT)
@@ -141,7 +134,7 @@ target_link_libraries(engine
 	${CMAKE_SOURCE_DIR}/SDL2/SDL2.lib
 	#SDL2main 
 	${CMAKE_SOURCE_DIR}/SDL2/SDL2_ttf.lib
-    ${CMAKE_SOURCE_DIR}/SDL2/SDL2_mixer.lib
+    #${CMAKE_SOURCE_DIR}/SDL2/SDL2_mixer.lib
 )
 
 target_compile_options(engine PRIVATE 
