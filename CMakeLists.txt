@@ -1,10 +1,11 @@
 cmake_minimum_required (VERSION 3.13)
 project (engine)
 
-if (UNIX)
-include_directories(. src)
 add_executable(engine)
 add_subdirectory(src)
+
+if (UNIX)
+include_directories(. src)
 
 set(CMAKE_CXX_CPPCHECK 
     cppcheck

@@ -81,6 +81,9 @@ static SDL_Window* window = nullptr;
 
 Color* create_window(Size s, bool fullscreen) {
     if (!window) {
+#ifdef _WIN32
+        SDL_setenv("SDL_AUDIODRIVER", "directsound", true); 
+#endif
         SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO);
         window = SDL_CreateWindow("", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, s.w, s.h, 0);
         if (fullscreen) {
