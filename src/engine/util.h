@@ -147,6 +147,7 @@ using AudioHandle = void*;
 AudioHandle load_wav(const std::string& filepath, bool music);
 void play_wav(AudioHandle audio, bool music);
 
+void pressed_keys(std::vector<std::string>& pressed, std::vector<std::string>& released);
 Point mouse_pos();
 
 #endif

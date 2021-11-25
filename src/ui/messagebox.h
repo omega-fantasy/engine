@@ -34,7 +34,7 @@ class MessageBox : public Composite, public Input::Listener {
     }
 
     void init() {
-        Engine.input()->add_key_listeners(this, {"Return"}, false, true);
+        Engine.input()->add_key_listeners(this, {"Return"}, true);
         Engine.input()->disable();
         text = new Text(message, 0.1 * size.h, {0.95 * size.w, 0.9 * size.h});
         add_child(text, {0.025 * size.w, 0.1 * size.h});

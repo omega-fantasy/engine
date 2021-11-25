@@ -113,7 +113,8 @@ class TextInput : public Text, public Input::Listener {
             for (char c = 0; c < 127; c++) {
                 letters.push_back(std::string(1, c));
             }
-            Engine.input()->add_key_listeners(this, letters, false, true);
+            letters.push_back("Backspace");
+            Engine.input()->add_key_listeners(this, letters, true);
         }
         
         ~TextInput() { Engine.input()->clear_temp_listeners(); }

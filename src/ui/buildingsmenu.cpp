@@ -67,6 +67,7 @@ void BuildingsMenu::tile_clicked(Point p) {
         std::string sound;
         if (active_button->name == "destroy") {
             System.buildings()->destroy(p);
+            sound = "destroy";
         } else if (active_button->name == "new town") {
             bool success = System.buildings()->create_town(p) && Engine.map()->set_tile("town", p);
             sound = success ? "build" : "error";

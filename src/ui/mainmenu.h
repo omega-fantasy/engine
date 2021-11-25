@@ -24,8 +24,8 @@ class MapScreen : public Composite, public Composite::Listener, public MessageBo
                 key_zoomin = Engine.config()->get("settings")["keys"]["zoomin"];
                 key_zoomout = Engine.config()->get("settings")["keys"]["zoomout"];
                 key_quit = Engine.config()->get("settings")["keys"]["quit"];
-                Engine.input()->add_key_listeners(this, {key_up, key_down, key_left, key_right}, true);
-                Engine.input()->add_key_listeners(this, {key_zoomin, key_zoomout, key_quit}, false);
+                Engine.input()->add_key_listeners(this, {key_up, key_down, key_left, key_right});
+                Engine.input()->add_key_listeners(this, {key_zoomin, key_zoomout, key_quit});
             }
 
             virtual void key_pressed(const std::string& key) {

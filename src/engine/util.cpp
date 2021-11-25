@@ -186,12 +186,58 @@ AudioHandle load_wav(const std::string& filepath, bool music) {
 
 void play_wav(AudioHandle audio, bool music) {
     AudioFile* handle = (AudioFile*)audio;
+    if (!handle) {
+        return;
+    }
     if (!handle->length_remaining && queued_audio.find(handle) == queued_audio.end()) {
         handle->length_remaining = handle->length;
         queued_audio.insert(handle);
     }
 }
-        
+
+
+
+
+void pressed_keys(std::vector<std::string>& pressed, std::vector<std::string>& released) {
+    SDL_Event event;
+    while (SDL_PollEvent(&event)) {
+        switch (event.type) {
+            case SDL_MOUSEWHEEL: {
+                pressed.push_back(event.wheel.y > 0 ? "WheelUp" : "WheelDown");
+                break;
+            }
+            case SDL_KEYDOWN: {
+                pressed.push_back(SDL_GetKeyName(event.key.keysym.sym));
+                break;
+            }
+            case SDL_KEYUP: {
+                released.push_back(SDL_GetKeyName(event.key.keysym.sym));
+                break;
+            }
+            case SDL_MOUSEBUTTONDOWN: {
+                if (event.button.button == SDL_BUTTON_LEFT) {
+                    pressed.push_back("MouseLeft");
+                }
+                break; 
+            }
+            case SDL_WINDOWEVENT: {
+                switch (event.window.event) {
+                case SDL_WINDOWEVENT_CLOSE:
+                    exit(0);
+                    break;
+                default:
+                    break;
+                }
+                break;
+            }
+            default:
+                break;
+        }
+    }
+}
+
+
+
 Point mouse_pos() {
     int mx, my;
     SDL_GetMouseState(&mx, &my);
