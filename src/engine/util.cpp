@@ -1,12 +1,14 @@
 #include "util.h"
 
 #include <SDL2/SDL.h>
-#include <SDL2/SDL_ttf.h>
 #include <filesystem>
 #include <chrono>
 #include <random>
 #include <iostream>
 #include <sstream>
+#include <stdio.h>
+#define STB_TRUETYPE_IMPLEMENTATION  // force following include to generate implementation
+#include "stb_truetype.h"
 
 std::pair<Color*, Size> load_bmp(const std::string& filepath) {
     SDL_Surface* img = SDL_LoadBMP(filepath.c_str());
@@ -17,22 +19,40 @@ std::pair<Color*, Size> load_bmp(const std::string& filepath) {
     return {(Color*)out, s};
 }
 
+static unsigned char ttf_buffer[1<<25];
 std::vector<std::pair<Color*, Size>> load_letters(const std::string& fontpath, int height, Color color, char start, char end) {
     std::vector<std::pair<Color*, Size>> ret;
-    if (!TTF_WasInit()) {
-        TTF_Init();
-    }
-    TTF_Font* font = TTF_OpenFont(fontpath.c_str(), height);
-    SDL_Color fgcolor = {color.red, color.blue, color.green, color.alpha};
-    union LU { char c[2] = {0, 0}; unsigned short us; };
-    LU letter;
+    fread(ttf_buffer, 1, 1<<25, fopen(fontpath.c_str(), "rb"));
+    stbtt_fontinfo font;
+    stbtt_InitFont(&font, ttf_buffer, stbtt_GetFontOffsetForIndex(ttf_buffer,0));
+    float scale = stbtt_ScaleForPixelHeight(&font, height);
+    int ascent, descent, lineGap;
+    stbtt_GetFontVMetrics(&font, &ascent, &descent, &lineGap);  
+    ascent = roundf(ascent * scale);
+    descent = roundf(descent * scale);
+
     for (char c = start; c < end; c++) {
-        letter.c[0] = c;
-        SDL_Surface* img = TTF_RenderGlyph_Blended(font, letter.us, fgcolor);
-        Size s = {img->w, img->h};
+        int leftSideBearing;
+	    int advanceWidth;
+        stbtt_GetCodepointHMetrics(&font, c, &advanceWidth, &leftSideBearing);
+        advanceWidth *= c == ' ' ? scale : 0;
+        leftSideBearing *= scale;
+        int c_x1, c_y1, c_x2, c_y2;
+        stbtt_GetCodepointBitmapBox(&font, c, scale, scale, &c_x1, &c_y1, &c_x2, &c_y2);
+        int y_char = ascent + c_y1;
+        int w = c_x2 - c_x1;
+        int h = c_y2 - c_y1;
+        unsigned char* bitmap = new unsigned char[w * h];
+        stbtt_MakeCodepointBitmap(&font, bitmap, w, h, w, scale, scale, c);
+        Size s(w + leftSideBearing + advanceWidth, y_char + h);
         Color* out = new Color[s.w * s.h];
-        std::memcpy(out, img->pixels, s.w * s.h * sizeof(Color)); 
-        SDL_FreeSurface(img);
+        for (int y = y_char; y < s.h; y++) {
+            for (int x = leftSideBearing; x < w + leftSideBearing; x++) {
+                out[y * s.w + x] = color;
+                out[y * s.w + x].alpha = bitmap[(y - y_char) * w + (x - leftSideBearing)];
+            }
+        }
+        delete[] bitmap;
         ret.push_back({out, s});
     }
     return ret;
@@ -184,7 +204,7 @@ AudioHandle load_wav(const std::string& filepath, bool music) {
     return handle;
 }
 
-void play_wav(AudioHandle audio, bool music) {
+void play_wav(AudioHandle audio, bool) {
     AudioFile* handle = (AudioFile*)audio;
     if (!handle) {
         return;

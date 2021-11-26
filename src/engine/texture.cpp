@@ -413,7 +413,7 @@ void TextureManager::init_letters(int height, Color color) {
     char start = 32;
     char end = 127;
     letter_to_texture[height].resize(end + 1);
-    auto letters = load_letters("./res/mono.ttf", height, color, start, end);
+    auto letters = load_letters(fontpath, height, color, start, end);
     for (auto& letter : letters) {
         letter_to_texture[height][start++] = new Texture(letter.second, letter.first);
     }

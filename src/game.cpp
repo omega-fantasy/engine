@@ -10,6 +10,7 @@ int main() {
 
     Engine.init(resolution);
     Engine.textures()->add_folder("./res/textures");
+    Engine.textures()->set_font("./res/mono.ttf");
     Engine.audio()->add_sound_folder("./res/sounds");
     //Engine.audio()->add_music_folder("./res/music");
     //Engine.audio()->play_music("music", 20);

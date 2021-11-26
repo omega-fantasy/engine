@@ -37,9 +37,9 @@ target_link_options(engine PRIVATE
     -fsanitize=undefined
     -fsanitize=bounds
     #-fsanitize=leak 
-    -fsanitize=float-divide-by-zero 
-    -fsanitize=float-cast-overflow 
-    -fsanitize=integer
+    #-fsanitize=float-divide-by-zero 
+    #-fsanitize=float-cast-overflow 
+    #-fsanitize=integer
     )
 
 target_compile_options(engine PRIVATE
@@ -72,9 +72,9 @@ target_compile_options(engine PRIVATE
     -fsanitize=undefined
     -fsanitize=bounds
     #-fsanitize=leak 
-    -fsanitize=float-divide-by-zero 
-    -fsanitize=float-cast-overflow 
-    -fsanitize=integer
+    #-fsanitize=float-divide-by-zero 
+    #-fsanitize=float-cast-overflow 
+    #-fsanitize=integer
 )
 
 endif (DBG)
@@ -83,8 +83,6 @@ if (OPT)
 
 target_compile_options(engine PRIVATE
     -std=c++17
-    -g3
-    -fno-omit-frame-pointer
     -fno-exceptions
     -fno-rtti
     -Ofast
@@ -99,7 +97,6 @@ target_compile_options(engine PRIVATE
 target_link_options(engine PRIVATE 
     -fuse-ld=lld
     -lSDL2 
-    -lSDL2_ttf
     -flto
     -Wl,-O3
     -Wl,--gc-sections
@@ -121,21 +118,9 @@ include_directories(. src)
 add_custom_command(TARGET engine POST_BUILD
                    COMMAND ${CMAKE_COMMAND} -E copy
                    engine.exe ${CMAKE_SOURCE_DIR})
-#add_custom_command(TARGET engine PRE_BUILD
-#                   COMMAND ${CMAKE_COMMAND} -E copy_directory
-#                   ${CMAKE_SOURCE_DIR}/SDL/lib .)
-#add_custom_command(TARGET engine PRE_BUILD
-#                   COMMAND ${CMAKE_COMMAND} -E copy_directory
-#                   ${CMAKE_SOURCE_DIR}/res res)
-#add_custom_command(TARGET engine PRE_BUILD
-#                   COMMAND ${CMAKE_COMMAND} -E copy_directory
-#                   ${CMAKE_SOURCE_DIR}/config .)
 
 target_link_libraries(engine 
 	${CMAKE_SOURCE_DIR}/SDL2/SDL2.lib
-	#SDL2main 
-	${CMAKE_SOURCE_DIR}/SDL2/SDL2_ttf.lib
-    #${CMAKE_SOURCE_DIR}/SDL2/SDL2_mixer.lib
 )
 
 target_compile_options(engine PRIVATE 

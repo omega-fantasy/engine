@@ -39,8 +39,10 @@ class TextureManager {
         Texture* get(const std::string& name);
         Texture* get(char letter, int size);
         std::string generate_name(const std::string& command, const std::vector<std::string>& params);
+        void set_font(const std::string& path) { fontpath = path; }
 
     private:
+        std::string fontpath;
         constexpr static char DELIMITER = '$';
         Texture* id_to_texture[15000] = {0};
         std::map<std::string, Texture*> name_to_texture;
