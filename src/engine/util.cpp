@@ -90,7 +90,7 @@ std::vector<std::string> split(const std::string &s, char delim) {
     while (std::getline(ss, item, delim)) {
         result.push_back(item);
     }
-    if (s.back() == delim) {
+    if (s.empty() || s.back() == delim) {
         result.emplace_back();
     }
     return result;

@@ -105,10 +105,8 @@ endif (UNIX)
 
 
 if (WIN32)
-
-add_custom_command(TARGET engine POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy engine.exe ${CMAKE_SOURCE_DIR})
+add_custom_command(TARGET engine POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy Release/engine.exe ${CMAKE_SOURCE_DIR})
 target_link_libraries(engine ${CMAKE_SOURCE_DIR}/SDL2.lib)
-
 target_compile_options(engine PRIVATE 
    /std:c++17
    /GR-
@@ -127,5 +125,4 @@ target_link_options(engine PRIVATE
    /ENTRY:mainCRTStartup
    #/DEBUG
 )
-
 endif (WIN32)
