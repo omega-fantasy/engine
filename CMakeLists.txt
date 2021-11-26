@@ -3,9 +3,9 @@ project (engine)
 
 add_executable(engine)
 add_subdirectory(src)
+include_directories(. src)
 
 if (UNIX)
-include_directories(. src)
 
 set(CMAKE_CXX_CPPCHECK 
     cppcheck
@@ -24,8 +24,6 @@ set(CMAKE_CXX_CLANG_TIDY
     -checks='alpha*,clang-analyzer-*,bugprone-*,misc-*,-bugprone-integer-division,-bugprone-narrowing-conversions,-misc-definitions-in-headers,-misc-unused-using-decls,-clang-analyzer-cplusplus.NewDeleteLeaks,-misc-non-private-member-variables-in-classes,-misc-no-recursion,-bugprone-macro-parentheses,-bugprone-unhandled-self-assignment,-bugprone-reserved-identifier;
     -extra-arg=-std=c++17;
     -header-filter=.*;)
-
-
 
 if (DBG)
 
@@ -62,11 +60,6 @@ target_compile_options(engine PRIVATE
     -Wdiv-by-zero
     -Wenum-compare
     -Wimplicit-fallthrough
-    -Walloca 
-    -Wformat=2
-    -Wformat-security
-    -Wstack-protector
-    -Wstrict-overflow=3
     -Wvla
     -fsanitize=address 
     -fsanitize=undefined
@@ -113,15 +106,8 @@ endif (UNIX)
 
 if (WIN32)
 
-include_directories(. src)
-
-add_custom_command(TARGET engine POST_BUILD
-                   COMMAND ${CMAKE_COMMAND} -E copy
-                   engine.exe ${CMAKE_SOURCE_DIR})
-
-target_link_libraries(engine 
-	${CMAKE_SOURCE_DIR}/SDL2/SDL2.lib
-)
+add_custom_command(TARGET engine POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy engine.exe ${CMAKE_SOURCE_DIR})
+target_link_libraries(engine ${CMAKE_SOURCE_DIR}/SDL2.lib)
 
 target_compile_options(engine PRIVATE 
    /std:c++17

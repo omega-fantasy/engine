@@ -1,6 +1,5 @@
 #include "util.h"
 
-#include <SDL2/SDL.h>
 #include <filesystem>
 #include <chrono>
 #include <random>
@@ -8,7 +7,9 @@
 #include <sstream>
 #include <stdio.h>
 #define STB_TRUETYPE_IMPLEMENTATION  // force following include to generate implementation
-#include "stb_truetype.h"
+#include "extern/stb_truetype.h"
+#include "extern/SDL2/SDL.h"
+
 
 std::pair<Color*, Size> load_bmp(const std::string& filepath) {
     SDL_Surface* img = SDL_LoadBMP(filepath.c_str());
