@@ -38,7 +38,7 @@ Color* Texture::pixels(float zoom) {
         auto ret = pixels_zoomin[static_cast<int>(zoom)];
         if (ret) return ret;
     }
-    return load_scaled(zoom);
+    return 0;
 }
 
 Color* Texture::load_scaled(float zoom) {
@@ -72,7 +72,6 @@ Color* Texture::load_scaled(float zoom) {
         if (zoom == 0.125) idx = 3;
         if (zoom == 0.25) idx = 2;
         if (zoom == 0.5) idx = 1;
-        if (zoom == 0.0625) idx = 4;
         if ((int)pixels_zoomout.size() < idx+1) {
             pixels_zoomout.resize(idx+1);
         }
@@ -185,7 +184,12 @@ static Texture* generate_plant(Size s, Color color_crown, Color color_trunk, dou
     return new Texture(s, img);
 }
 
+static Texture* generate_debris(Size s, Color c1, Color c2, Color c3) {
+    Color* img = new Color[s.w * s.h];
 
+
+    return new Texture(s, img);
+}
 
 
 
@@ -229,6 +233,9 @@ void TextureManager::register_texture(const std::string& name, Texture* t) {
     name_to_texture[name] = t;
     Engine.db()->get_table<String<256>>("textures")->add(currentID, name);
     currentID++;
+    for (float z : {0.125, 0.25, 0.5, 1.0, 2.0, 4.0}) {
+        t->load_scaled(z);
+    }
 }
 
 void TextureManager::add_folder(const std::string& folder) {

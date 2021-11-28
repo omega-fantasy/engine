@@ -77,13 +77,13 @@ class Text : public Composite {
             }
             if (needs_update()) {
                 if (m_texture) {
-                    Engine.screen()->blit(m_texture, pos, Box(pos, size), 1);
+                    Engine.screen()->blit(m_texture->pixels(1.0), m_texture->size(1.0), pos, Box(pos, size), false);
                 }
                 Point p = pos;
                 for (auto& line : lines) {
                     short line_height = 0;
                     for (auto& letter : line) {
-                        Engine.screen()->blit(letter, p, Box(pos, size));
+                        Engine.screen()->blit(letter->pixels(1.0), letter->size(1.0), p, Box(pos, size), true);
                         p.x += letter->size().w;
                         line_height = letter->size().h > line_height ? letter->size().h : line_height;
                     }

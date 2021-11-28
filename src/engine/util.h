@@ -12,6 +12,7 @@
 #include <map>
 #include <set>
 #include <fstream>
+#include <functional>
 
 // Utility data structures
 
@@ -149,5 +150,9 @@ void play_wav(AudioHandle audio, bool music);
 
 void pressed_keys(std::vector<std::string>& pressed, std::vector<std::string>& released);
 Point mouse_pos();
+
+int num_threads();
+void create_thread(std::function<void()> job);
+void wait_all_threads();
 
 #endif

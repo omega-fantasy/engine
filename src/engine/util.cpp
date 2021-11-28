@@ -1,13 +1,6 @@
 #include "util.h"
 
-#include <filesystem>
-#include <chrono>
-#include <random>
 #include <iostream>
-#include <sstream>
-#include <stdio.h>
-#define STB_TRUETYPE_IMPLEMENTATION  // force following include to generate implementation
-#include "extern/stb_truetype.h"
 #include "extern/SDL2/SDL.h"
 
 
@@ -20,8 +13,12 @@ std::pair<Color*, Size> load_bmp(const std::string& filepath) {
     return {(Color*)out, s};
 }
 
-static unsigned char ttf_buffer[1<<25];
+
+#define STB_TRUETYPE_IMPLEMENTATION  // force following include to generate implementation
+#include "extern/stb_truetype.h"
+#include <stdio.h>
 std::vector<std::pair<Color*, Size>> load_letters(const std::string& fontpath, int height, Color color, char start, char end) {
+    static unsigned char ttf_buffer[1<<25];
     std::vector<std::pair<Color*, Size>> ret;
     fread(ttf_buffer, 1, 1<<25, fopen(fontpath.c_str(), "rb"));
     stbtt_fontinfo font;
@@ -59,6 +56,9 @@ std::vector<std::pair<Color*, Size>> load_letters(const std::string& fontpath, i
     return ret;
 }
 
+
+
+#include <filesystem>
 std::vector<std::string> filelist(const std::string& path, const std::string& filter) {
     std::vector<std::string> ret;
     for (auto& file : std::filesystem::recursive_directory_iterator(path)) {
@@ -83,6 +83,7 @@ std::string filename(const std::string& filepath) {
     return f;
 }
 
+#include <sstream>
 std::vector<std::string> split(const std::string &s, char delim) {
     std::vector<std::string> result;
     std::stringstream ss(s);
@@ -97,6 +98,8 @@ std::vector<std::string> split(const std::string &s, char delim) {
 }
 
 void print(const std::string& s) { std::cout << s << std::endl; }
+
+
 
 static SDL_Window* window = nullptr;
 
@@ -120,6 +123,11 @@ void update_window() {
     }
 }
 
+
+
+
+#include <chrono>
+#include <random>
 void wait(int us) {
     SDL_Delay(us / 1000);
 }
@@ -157,6 +165,8 @@ double random_gauss(double mean, double dev) {
 }
 
 
+
+
 struct AudioFile {
     SDL_AudioSpec spec;
     Uint32 length;
@@ -169,7 +179,7 @@ static std::set<AudioFile*> queued_audio;
 static SDL_AudioFormat audio_format = AUDIO_S16LSB;
 static SDL_AudioDeviceID dev;   
 
-void audio_callback(void *userdata, Uint8 *stream, int len) {
+void audio_callback(void*, Uint8 *stream, int len) {
     SDL_memset(stream, 0, len);
     std::vector<AudioFile*> remove;
     for (auto& audio : queued_audio) {
@@ -257,10 +267,73 @@ void pressed_keys(std::vector<std::string>& pressed, std::vector<std::string>& r
     }
 }
 
-
-
 Point mouse_pos() {
     int mx, my;
     SDL_GetMouseState(&mx, &my);
     return {mx, my};
+}
+
+#include <atomic>
+#include <queue>
+#include <thread>
+#include <mutex>
+#include <functional>
+#include <condition_variable>
+
+static std::vector<std::thread> threads;
+static std::vector<std::function<void()>> functions;
+static std::vector<std::mutex> mutexes;
+static std::vector<std::condition_variable>* conditions;
+static std::vector<std::atomic<bool>> busy;
+
+static void empty_func() {}
+
+
+static void loop_func(int thread_id) {
+    int id = thread_id;
+    while (true) {
+        std::unique_lock<std::mutex> lk(mutexes[id]);
+        (*conditions)[id].wait(lk, [&](){return (bool)busy[id];});
+        functions[id]();
+        //functions[id] = empty_func;
+        busy[id] = false;
+        (*conditions)[id].notify_one();
+    }
+};
+
+int num_threads() { return std::thread::hardware_concurrency() / 2; }
+
+void create_thread(std::function<void()> job) {
+    if (threads.empty()) {
+        conditions = new std::vector<std::condition_variable>(num_threads());
+        mutexes = std::vector<std::mutex>(num_threads());
+        busy = std::vector<std::atomic<bool>>(num_threads());
+        for (int i = 0; i < num_threads(); i++) {
+            functions.push_back(empty_func);
+            threads.push_back(std::thread(loop_func, i));
+            threads[i].detach();
+        }
+    }
+    int id = -1;
+    while (id < 0) {
+        for (int i = 0; i < num_threads(); i++) {
+            if (!busy[i]) {
+                busy[i] = true;
+                id = i;
+                functions[i] = job;
+                (*conditions)[id].notify_one();
+                break;
+            }
+        }
+    }
+}
+
+void wait_all_threads() {
+    std::mutex mtx;
+    for (int i = 0; i < num_threads(); i++) { 
+        if (busy[i]) {
+            std::unique_lock<std::mutex> lk(mtx);
+            (*conditions)[i].wait(lk, [&](){return (bool)(!busy[i]);});
+        }   
+    }     
 }

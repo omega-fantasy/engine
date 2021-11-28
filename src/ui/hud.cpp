@@ -61,6 +61,17 @@ class TownsButton : public Button {
         HUD* parent;
 };
 
+class FPSButton : public Button {
+    public:
+        FPSButton(): Button({0, 0}, "0") {}
+        void draw() {
+            if (listener_registered) {
+                set_text("FPS: " + std::to_string(Engine.screen()->fps()));
+            }
+            Button::draw();
+        }
+};
+
 /*
 class NewButton : public Button {
     public:
@@ -124,7 +135,7 @@ void HUD::change_layout(const std::vector<std::pair<Composite*, Point>>& new_lay
 
 std::vector<std::pair<Composite*, Point>> HUD::create_standard_layout() {
     std::vector<std::pair<Composite*, Point>> ret;
-    std::vector<Button*> buttons = {new BuildingsButton(this), new ResearchButton(this), new EventButton(this), new TownsButton(this), new SimulateButton(), new SaveButton(), new LoadButton()};
+    std::vector<Button*> buttons = {new BuildingsButton(this), new ResearchButton(this), new EventButton(this), new TownsButton(this), new SimulateButton(), new SaveButton(), new LoadButton(), new FPSButton()};
     for (int i = 0; i < (int)buttons.size(); i++) {
         buttons[i]->set_texture(new Texture(0xFF555555, {0.8 * size.w, 0.06 * size.h}));
         ret.push_back({buttons[i], {0.1 * size.w, (i+1) * 0.07 * size.h}});

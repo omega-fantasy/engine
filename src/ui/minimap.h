@@ -43,7 +43,7 @@ class MiniMap : public Composite, Input::Listener, Tilemap::Listener {
                 listener_registered = true;
             }
             if (needs_update()) {
-                Engine.screen()->blit(m_texture, pos, Box(pos, size));
+                Engine.screen()->blit(m_texture->pixels(), m_texture->size(), pos, Box(pos, size), false);
                 Box corners = Engine.map()->visible_tiles();
                 Size tiles_per_pixel = Engine.map()->tilemap_size() / size;
                 Point p1 = pos + Point(corners.a.x / tiles_per_pixel.w, corners.a.y / tiles_per_pixel.h);
@@ -52,13 +52,13 @@ class MiniMap : public Composite, Input::Listener, Tilemap::Listener {
                 if (red_boxes.find(zoom) == red_boxes.end()) {
                     create_box(p1, p2, zoom);
                 }
-                Engine.screen()->blit(red_boxes[zoom], p1, Box(pos, size));
+                Engine.screen()->blit(red_boxes[zoom]->pixels(), red_boxes[zoom]->size(), p1, Box(pos, size), true);
             
                 auto table = Engine.db()->get_table<Buildings::Town>("towns");
                 for (auto it = table->begin(); it != table->end(); ++it) {
                     Point p_town(it.key());
                     Point p_dot = pos + Point(p_town.x / tiles_per_pixel.w, p_town.y / tiles_per_pixel.h);
-                    Engine.screen()->blit(texture_dot, p_dot, Box(pos, size));
+                    Engine.screen()->blit(texture_dot->pixels(), texture_dot->size(), p_dot, Box(pos, size), false);
                 }
                 set_update(false);
             }

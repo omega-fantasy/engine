@@ -31,9 +31,11 @@ target_link_options(engine PRIVATE
     -fuse-ld=lld
     -lSDL2 
     -lSDL2_ttf
-    -fsanitize=address 
-    -fsanitize=undefined
-    -fsanitize=bounds
+    -lpthread
+    #-fsanitize=thread
+    #-fsanitize=address 
+    #-fsanitize=undefined
+    #-fsanitize=bounds
     #-fsanitize=leak 
     #-fsanitize=float-divide-by-zero 
     #-fsanitize=float-cast-overflow 
@@ -61,9 +63,10 @@ target_compile_options(engine PRIVATE
     -Wenum-compare
     -Wimplicit-fallthrough
     -Wvla
-    -fsanitize=address 
-    -fsanitize=undefined
-    -fsanitize=bounds
+    #-fsanitize=thread
+    #-fsanitize=address 
+    #-fsanitize=undefined
+    #-fsanitize=bounds
     #-fsanitize=leak 
     #-fsanitize=float-divide-by-zero 
     #-fsanitize=float-cast-overflow 
@@ -79,23 +82,25 @@ target_compile_options(engine PRIVATE
     -fno-exceptions
     -fno-rtti
     -Ofast
+    -march=native
     -flto
-    -fstrict-vtable-pointers
-    -fwhole-program-vtables
-    -fforce-emit-vtables
+    #-fstrict-vtable-pointers
+    #-fwhole-program-vtables
+    #-fforce-emit-vtables
     -ffunction-sections
     -fdata-sections
     ) 
 
 target_link_options(engine PRIVATE 
-    -fuse-ld=lld
+    -fuse-ld=gold
     -lSDL2 
     -flto
+    -lpthread
     -Wl,-O3
     -Wl,--gc-sections
     -Wl,--strip-all 
     -Wl,--icf=all  
-    -Wl,--lto-O3
+    #-Wl,--lto-O3
     )
 
 endif (OPT)
