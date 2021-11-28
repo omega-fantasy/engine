@@ -11,7 +11,15 @@ class Texture {
         Texture(Size s, Color* pixels);
         Texture(Color color, Size s);
         virtual ~Texture();
-        Color* pixels(float zoom = 1);
+        Color* pixels(float zoom = 1.0f) {
+            if (zoom == 0.125f) return pixels_zoomout[3];
+            if (zoom == 0.25f) return pixels_zoomout[2];
+            if (zoom == 0.5f) return pixels_zoomout[1];
+            if (zoom == 1.0f) return pixels_og;
+            if (zoom == 2.0f) return pixels_zoomin[1];
+            if (zoom == 4.0f) return pixels_zoomin[2];
+            return nullptr;
+        }
         Size size(float zoom = 1) { return m_size * zoom; }
         bool transparent() { return hasTransparency; }
         void set_transparent(bool b) { hasTransparency = b; }   

@@ -159,29 +159,6 @@ void Tilemap::fix_camera() {
     camera_pos.y = camera_pos.y < camera_max.y ? camera_pos.y : camera_max.y;
 }
 
-struct RenderThread {
-    RenderThread(Box bx, Matrix<Texture::ID>* tiles, float z, Point p, Size s, BigPoint c, Size ts): b(bx), tiles_ground(tiles),
-    zoom(z), pos(p), size(s), camera(c), tile_dim(ts) {}
-    Box b;
-    Matrix<Texture::ID>* tiles_ground;
-    float zoom;
-    Point pos;
-    Size size;
-    BigPoint camera;
-    Size tile_dim;
-    void operator()() {
-        for (short y = b.a.y; y <= b.b.y; y++) { 
-            for (short x = b.a.x; x <= b.b.x; x++) { 
-                Texture::ID id = tiles_ground->get(x,y);
-                Texture* t = Engine.textures()->get(id < 0 ? -id : id);
-                Engine.screen()->blit(t->pixels(zoom), t->size(zoom),
-                        {pos.x - camera.x + x * tile_dim.w * zoom, pos.y - camera.y + y * tile_dim.h * zoom },
-                        {pos, size}, false);
-            }
-        }
-    }
-};
-
 void Tilemap::draw() {
     if (!listener_registered) {
         Engine.input()->add_mouse_listener(this, {pos, size});
@@ -195,17 +172,6 @@ void Tilemap::draw() {
 
     if (needs_update() || do_update) {
         Box visible = visible_tiles();
-        int n_threads = num_threads();
-        int lines_per = visible.size().h / n_threads;
-        std::vector<std::function<void()>> functions;
-        for (int i = 0; i < n_threads; i++) {
-            Box b(Point(0 + visible.a.x, visible.a.y + i * lines_per), Point(0 + visible.b.x, visible.a.y + (i + 1) * lines_per));
-            b.b.y = b.b.y >= visible.b.y ? visible.b.y : b.b.y;
-            functions.push_back(RenderThread(b, tiles_ground, zoom, pos, size, camera_pos, tile_dim)); 
-        }
-        for (auto& f : functions) { create_thread(f);}
-        wait_all_threads();
-        /*
         for (short y = visible.a.y; y <= visible.b.y; y++) { 
             for (short x = visible.a.x; x <= visible.b.x; x++) { 
                 Texture::ID id = tiles_ground->get(x,y);
@@ -215,7 +181,6 @@ void Tilemap::draw() {
                         {pos, size}, false);
             }
         }
-        */
         for (short y = visible.a.y; y <= visible.b.y; y++) {
             for (short x = visible.a.x; x <= visible.b.x; x++) {
                 Texture::ID id = tiles_above->get(x, y);

@@ -101,7 +101,7 @@ void Composite::draw() {
     }
 }
 
-void Screen::blit(Color* texture, Size texture_size, Point start, Box canvas, bool) {
+void Screen::blit(Color* texture, Size texture_size, Point start, Box canvas, bool transparent) {
     Point texture_end(start.x + texture_size.w, start.y + texture_size.h);
     if (texture_end.x < canvas.a.x || texture_end.y < canvas.a.y || 
         start.x > canvas.b.x || start.y > canvas.b.y) {
@@ -125,13 +125,20 @@ void Screen::blit(Color* texture, Size texture_size, Point start, Box canvas, bo
     
     unsigned* texture_pixels = (unsigned*)(texture + texture_start.y * texture_size.w + texture_start.x); 
     unsigned* screen_pixels = (unsigned*)(pixels + start.y * size.w + start.x);
-    for (int y = 0; y < texture_size.h - texture_start.y - texture_endcut.y; y++) {
-        for (int x = 0; x < texture_size.w - texture_start.x - texture_endcut.x; x++) {
-            unsigned color1 = screen_pixels[y * size.w + x];
-            unsigned color2 = texture_pixels[y*texture_size.w+x];
-            unsigned rb = (color1 & 0xff00ff) + (((color2 & 0xff00ff) - (color1 & 0xff00ff)) * ((color2 & 0xff000000) >> 24) >> 8);
-            unsigned g  = (color1 & 0x00ff00) + (((color2 & 0x00ff00) - (color1 & 0x00ff00)) * ((color2 & 0xff000000) >> 24) >> 8);
-            screen_pixels[y * size.w + x] = (rb & 0xff00ff) | (g & 0x00ff00);
+    if (transparent) {
+        for (int y = 0; y < texture_size.h - texture_start.y - texture_endcut.y; y++) {
+            for (int x = 0; x < texture_size.w - texture_start.x - texture_endcut.x; x++) {
+                unsigned color1 = screen_pixels[y * size.w + x];
+                unsigned color2 = texture_pixels[y*texture_size.w+x];
+                unsigned rb = (color1 & 0xff00ff) + (((color2 & 0xff00ff) - (color1 & 0xff00ff)) * ((color2 & 0xff000000) >> 24) >> 8);
+                unsigned g  = (color1 & 0x00ff00) + (((color2 & 0x00ff00) - (color1 & 0x00ff00)) * ((color2 & 0xff000000) >> 24) >> 8);
+                screen_pixels[y * size.w + x] = (rb & 0xff00ff) | (g & 0x00ff00);
+            }
+        }
+    } else {
+        int linesize = (texture_size.w - texture_start.x - texture_endcut.x) * sizeof(int);
+        for (int y = 0; y < texture_size.h - texture_start.y - texture_endcut.y; y++) {
+                std::memcpy(screen_pixels + y * size.w, texture_pixels + y * texture_size.w, linesize);
         }
     }
 }

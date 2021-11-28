@@ -22,25 +22,6 @@ Texture::~Texture() {
     }
 }
 
-Color* Texture::pixels(float zoom) {
-    if (zoom < 1) {         
-        int idx = 0;
-        if (zoom == 0.125) idx = 3;
-        else if (zoom == 0.25) idx = 2;
-        else if (zoom == 0.5) idx = 1;
-        if ((int)pixels_zoomout.size() - 1 >= idx) {
-            auto ret = pixels_zoomout[idx];
-            if (ret) return ret;
-        }
-    } else if (std::abs(zoom - 1.0) < 0.01) {
-        return pixels_og;
-    } else if (zoom > 1 && (int)pixels_zoomin.size()-1 >= zoom) {
-        auto ret = pixels_zoomin[static_cast<int>(zoom)];
-        if (ret) return ret;
-    }
-    return 0;
-}
-
 Color* Texture::load_scaled(float zoom) {
     int fact = (double)1 / zoom;
     int izoom = (int)zoom;
