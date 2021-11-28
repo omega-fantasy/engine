@@ -16,8 +16,8 @@ class Texture {
             if (zoom == 0.25f) return pixels_zoomout[2];
             if (zoom == 0.5f) return pixels_zoomout[1];
             if (zoom == 1.0f) return pixels_og;
-            if (zoom == 2.0f) return pixels_zoomin[1];
-            if (zoom == 4.0f) return pixels_zoomin[2];
+            if (zoom == 2.0f) return pixels_zoomin[2];
+            if (zoom == 4.0f) return pixels_zoomin[4];
             return nullptr;
         }
         Size size(float zoom = 1) { return m_size * zoom; }

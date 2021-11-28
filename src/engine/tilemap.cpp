@@ -166,19 +166,19 @@ void Tilemap::draw() {
     }
 
     Texture* t = Engine.textures()->get(cursor_texture);
-    Box b(pos, size);
+    Box canvas(pos, size);
     Point mpos = mouse_pos();
-    bool do_update = t && b.inside(mpos) && mpos != last_mouse_pos;
+    bool do_update = t && canvas.inside(mpos) && mpos != last_mouse_pos;
 
     if (needs_update() || do_update) {
         Box visible = visible_tiles();
+        BigPoint cam_ref(pos.x - camera_pos.x, pos.y - camera_pos.y);
+        Size tile_size(tile_dim.w * zoom, tile_dim.h * zoom);
         for (short y = visible.a.y; y <= visible.b.y; y++) { 
             for (short x = visible.a.x; x <= visible.b.x; x++) { 
                 Texture::ID id = tiles_ground->get(x,y);
                 Texture* t = Engine.textures()->get(id < 0 ? -id : id);
-                Engine.screen()->blit(t->pixels(zoom), t->size(zoom),
-                        {pos.x - camera_pos.x + x * tile_dim.w * zoom, pos.y - camera_pos.y + y * tile_dim.h * zoom },
-                        {pos, size}, false);
+                Engine.screen()->blit(t->pixels(zoom), t->size(zoom), {cam_ref.x + x * tile_size.w, cam_ref.y + y * tile_size.h}, canvas, false);
             }
         }
         for (short y = visible.a.y; y <= visible.b.y; y++) {
@@ -186,18 +186,16 @@ void Tilemap::draw() {
                 Texture::ID id = tiles_above->get(x, y);
                 if (id > 0) {
                     Texture* t = Engine.textures()->get(id);
-                    Engine.screen()->blit(t->pixels(zoom), t->size(zoom),
-                        {pos.x - camera_pos.x + x * tile_dim.w * zoom, pos.y - camera_pos.y + y * tile_dim.h * zoom },
-                        {pos, size}, true);
+                    Engine.screen()->blit(t->pixels(zoom), t->size(zoom), {cam_ref.x + x * tile_size.w, cam_ref.y + y * tile_size.h}, canvas, true);
                 }
             }
         }        
-        if (t && b.inside(mpos)) { // snap to tile
+        if (t && canvas.inside(mpos)) { // snap to tile
             BigPoint mouse_abs = camera_pos + mpos - pos;
             Point tile_abs = { mouse_abs.x / (tile_dim.w * zoom), mouse_abs.y / (tile_dim.h * zoom) };
             mouse_abs = { tile_abs.x * (tile_dim.w * zoom), tile_abs.y * (tile_dim.h * zoom) };
             tile_abs = { mouse_abs.x - camera_pos.x + pos.x, mouse_abs.y - camera_pos.y + pos.y };
-            Engine.screen()->blit(t->pixels(zoom), t->size(zoom), tile_abs, Box(pos, size), t->transparent());
+            Engine.screen()->blit(t->pixels(zoom), t->size(zoom), tile_abs, canvas, t->transparent());
         }
         last_mouse_pos = mpos;
         set_update(false);
