@@ -12,7 +12,7 @@ class HUD : public Composite {
         void change_layout(const std::vector<std::pair<Composite*, Point>>& new_layout, bool back=true);
         std::vector<std::pair<Composite*, Point>> create_standard_layout();
     private:
-        MiniMap* mini_map;
+        MiniMap* mini_map = nullptr;
 };
 
 #endif

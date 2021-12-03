@@ -88,13 +88,13 @@ class MainMenu : public Composite, TextInputWidget::Listener, Composite::Listene
         auto map_screen = new MapScreen();
         Engine.screen()->add_child(map_screen, {0, 0});
         Engine.map()->randomize_map();
-        Engine.screen()->set_overlay(0x00000000, 30, map_screen);
+        Engine.screen()->set_overlay(0x00000000, 10, map_screen);
         delete this;
     }   
 
     virtual void confirmed(TextInputWidget* widget) {
         m_widget = widget;
-        Engine.screen()->set_overlay(0xFF000000, 30, this);
+        Engine.screen()->set_overlay(0xFF000000, 10, this);
         Engine.input()->disable();
     };
     

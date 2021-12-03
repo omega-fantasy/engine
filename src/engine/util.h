@@ -112,7 +112,7 @@ template<int N> struct String : StringBase {
     String<N>& operator=(const String<N>&&) = delete;
     String<N>& operator=(const String<N>& c) { memcpy(mem, c.mem, N); return *this;}
     String<N>& operator=(const std::string& c) { strncpy(mem, c.c_str(), c.size()); return *this;}
-    String<N>& operator=(const char* c) { strcpy(mem, c); return *this;}
+    //String<N>& operator=(const char* c) { strcpy(mem, c); return *this;}
     std::string toStdString() { return std::string(mem); }
     char mem[N] = {0};
 };

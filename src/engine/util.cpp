@@ -20,10 +20,12 @@ std::pair<Color*, Size> load_bmp(const std::string& filepath) {
 std::vector<std::pair<Color*, Size>> load_letters(const std::string& fontpath, int height, Color color, char start, char end) {
     static unsigned char ttf_buffer[1<<25];
     std::vector<std::pair<Color*, Size>> ret;
-    fread(ttf_buffer, 1, 1<<25, fopen(fontpath.c_str(), "rb"));
+    FILE* fontfile = fopen(fontpath.c_str(), "rb");
+    fread(ttf_buffer, 1, 1<<25, fontfile);
+    fclose(fontfile);
     stbtt_fontinfo font;
     stbtt_InitFont(&font, ttf_buffer, stbtt_GetFontOffsetForIndex(ttf_buffer,0));
-    float scale = stbtt_ScaleForPixelHeight(&font, height);
+    float scale = stbtt_ScaleForPixelHeight(&font, (float)height);
     int ascent, descent, lineGap;
     stbtt_GetFontVMetrics(&font, &ascent, &descent, &lineGap);  
     ascent = roundf(ascent * scale);

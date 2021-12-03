@@ -3,12 +3,11 @@
 #include "config.h"
 #include "db.h"
 
-Texture::Texture(Size s, Color* pixels): pixels_og(pixels), m_size(s) {
+Texture::Texture(Size s, Color* pixels): m_size(s), pixels_og(pixels) {
     hasTransparency = std::any_of(pixels, pixels+s.w*s.h, [](Color p){return p.alpha < 128;});
 }
         
-Texture::Texture(Color color, Size s): m_size(s) {
-    pixels_og = new Color[s.w * s.h];
+Texture::Texture(Color color, Size s):  m_size(s), pixels_og(new Color[s.w * s.h]) {
     std::fill(pixels_og, pixels_og + s.w * s.h, int(color));
 }
 
@@ -147,16 +146,16 @@ static Texture* generate_plant(Size s, Color color_crown, Color color_trunk, dou
             }
             short x_range = base * crown.size().w + (1 - base) * crown.size().w * d + (int)random_uniform(0, 1 + 0.1 * s.w);
             for (int x = s.w / 2 - x_range / 2; x < s.w / 2 + x_range / 2; x++) {
-                unsigned char d = 150 * ((double)crown.center().distance({x, y}) / (crown.size().w / 2 + crown.size().h / 2));
-                img[y * s.w + x] = randomize(color_crown - d, variance);
+                unsigned char diff = 150 * ((double)crown.center().distance({x, y}) / (crown.size().w / 2 + crown.size().h / 2));
+                img[y * s.w + x] = randomize(color_crown - diff, variance);
             }
         } else if (y >= trunk.a.y && y <= trunk.b.y) {
             double d = 1 - ((double)std::abs(y - trunk.center().y) / (trunk.size().h /2));
             double base = y > trunk.center().y ? 0.7 : 0.35;
             short x_range = base * trunk.size().w + (1 - base) * trunk.size().w * d + (int)random_uniform(0, 1 + 0.1 * s.w);
             for (int x = s.w / 2 - x_range / 2; x < s.w / 2 + x_range / 2; x++) {
-                unsigned char d = 160 * ((double)trunk.center().distance({x, y}) / (trunk.size().w / 2 + trunk.size().h / 2));
-                img[y * s.w + x] = randomize(color_trunk - d, variance);
+                unsigned char diff = 160 * ((double)trunk.center().distance({x, y}) / (trunk.size().w / 2 + trunk.size().h / 2));
+                img[y * s.w + x] = randomize(color_trunk - diff, variance);
             }           
         
         }
@@ -165,7 +164,7 @@ static Texture* generate_plant(Size s, Color color_crown, Color color_trunk, dou
     return new Texture(s, img);
 }
 
-static Texture* generate_debris(Size s, Color c1, Color c2, Color c3) {
+static Texture* generate_debris(Size s, Color, Color, Color, Size ) {
     Color* img = new Color[s.w * s.h];
 
 

@@ -106,7 +106,7 @@ class Screen : public Composite {
             } else {
                 int linesize = (texture_size.w - texture_start.x - texture_endcut.x) * sizeof(int);
                 for (int y = 0; y < texture_size.h - texture_start.y - texture_endcut.y; y++) {
-                        std::memcpy(screen_pixels + y * size.w, texture_pixels + y * texture_size.w, linesize);
+                    std::memcpy(screen_pixels + y * size.w, texture_pixels + y * texture_size.w, linesize);
                 }
             }
         }
@@ -125,7 +125,7 @@ class Screen : public Composite {
     private:
         int* pixels;
         long long last_update = now();
-        int m_fps;
+        int m_fps = 0;
 };
 
 #endif
