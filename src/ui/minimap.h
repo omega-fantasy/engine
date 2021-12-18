@@ -44,8 +44,12 @@ class MiniMap : public Composite, Input::Listener, Tilemap::Listener {
             }
             if (needs_update()) {
                 Engine.screen()->blit(m_texture->pixels(), m_texture->size(), pos, Box(pos, size), false);
-                Box corners = Engine.map()->visible_tiles();
                 Size tiles_per_pixel = Engine.map()->tilemap_size() / size;
+                Box corners = Engine.map()->visible_tiles();
+                WrappingPoint tile_center(corners.center().x, corners.center().y, Engine.map()->tilemap_size());
+                Point mini_cam_pos = pos + Point(tile_center.x / tiles_per_pixel.w, tile_center.y / tiles_per_pixel.h);
+                Engine.screen()->blit(texture_cam->pixels(), texture_cam->size(), mini_cam_pos, Box(pos, size), true);
+                /* disabled drawing box on mini-map due to complex edge-wrapping
                 Point p1 = pos + Point(corners.a.x / tiles_per_pixel.w, corners.a.y / tiles_per_pixel.h);
                 Point p2 = pos + Point(corners.b.x / tiles_per_pixel.w, corners.b.y / tiles_per_pixel.h);
                 float zoom = Engine.map()->camera_zoom();
@@ -53,12 +57,12 @@ class MiniMap : public Composite, Input::Listener, Tilemap::Listener {
                     create_box(p1, p2, zoom);
                 }
                 Engine.screen()->blit(red_boxes[zoom]->pixels(), red_boxes[zoom]->size(), p1, Box(pos, size), true);
-            
+                */
                 auto table = Engine.db()->get_table<Buildings::Town>("towns");
                 for (auto it = table->begin(); it != table->end(); ++it) {
                     Point p_town(it.key());
                     Point p_dot = pos + Point(p_town.x / tiles_per_pixel.w, p_town.y / tiles_per_pixel.h);
-                    Engine.screen()->blit(texture_dot->pixels(), texture_dot->size(), p_dot, Box(pos, size), false);
+                    Engine.screen()->blit(texture_city->pixels(), texture_city->size(), p_dot, Box(pos, size), false);
                 }
                 set_update(false);
             }
@@ -91,7 +95,8 @@ class MiniMap : public Composite, Input::Listener, Tilemap::Listener {
 
     private:
         std::map<float, Texture*> red_boxes;
-        Texture* texture_dot = new Texture(0xFFFF00FF, {4, 4});
+        Texture* texture_city = new Texture(Color(255, 0, 0), {5, 5});
+        Texture* texture_cam = new Texture(Color(255, 255, 255), {5, 5});
         bool listener_registered = false;
         bool recreate = true;
 };

@@ -218,35 +218,19 @@ class MapGen {
                             current_anchors.back().pos.y += y_offset;
                         }
                     }
-                    /*
-                    Box sample_cells(
-                        Point(x_cell > sample_dist ? x_cell - sample_dist : 0,
-                              y_cell > sample_dist ? y_cell - sample_dist : 0), 
-                        Point(x_cell + sample_dist < num_cells.w - 1 ? x_cell + sample_dist : num_cells.w - 1, 
-                              y_cell + sample_dist < num_cells.h - 1 ? y_cell + sample_dist : num_cells.h - 1)
-                    );
-                    current_anchors.clear();
-                    for (short y_cells = sample_cells.a.y; y_cells <= sample_cells.b.y; y_cells++) {
-                        for (short x_cells = sample_cells.a.x; x_cells <= sample_cells.b.x; x_cells++) {
-                            current_anchors.push_back(anchors[y_cells * num_cells.w + x_cells]);
-                        }
-                    }
-                    */
-                    for (short y_map = y_cell * cell_size.h; (short)(y_map < (y_cell + 1) * cell_size.h); y_map++) {
-                        for (short x_map = x_cell * cell_size.w; (short)(x_map < (x_cell + 1) * cell_size.w); x_map++) {
+                    for (short y_map = y_cell * cell_size.h; y_map < (short)((y_cell + 1) * cell_size.h); y_map++) {
+                        for (short x_map = x_cell * cell_size.w; x_map < (short)((x_cell + 1) * cell_size.w); x_map++) {
                             unsigned long long sum_val = 0;
                             unsigned long long sum_temp = 0;
                             unsigned long long total_samples = 0;
-                            for (auto& anchor : current_anchors) {
-                                int diffx = anchor.pos.x - x_map;
-                                int diffy = anchor.pos.y - y_map;
-                                short dist = ((diffx ^ (diffx >> 31)) - (diffx >> 31)) + ((diffy ^ (diffy >> 31)) - (diffy >> 31));
+                            for (int i = 0; i < (int)current_anchors.size(); i++) {
+                                int diffx = current_anchors[i].pos.x - x_map;
+                                int diffy = current_anchors[i].pos.y - y_map;
+                                int dist = ((diffx ^ (diffx >> 31)) - (diffx >> 31)) + ((diffy ^ (diffy >> 31)) - (diffy >> 31));
                                 int num_samples = max_samples - dist * dist;
-                                if (num_samples < 0) {
-                                    num_samples = 1;
-                                }
-                                sum_val += num_samples * anchor.perc;
-                                sum_temp += num_samples * anchor.temp;
+                                num_samples = 1 + (num_samples & -((num_samples >> 31) ^ 1));
+                                sum_val += num_samples * current_anchors[i].perc;
+                                sum_temp += num_samples * current_anchors[i].temp;
                                 total_samples += num_samples;
                             }
                             double total_val = (double)sum_val / (total_samples * Anchor::PERC_FACTOR);

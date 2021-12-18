@@ -164,9 +164,12 @@ static Texture* generate_plant(Size s, Color color_crown, Color color_trunk, dou
     return new Texture(s, img);
 }
 
-static Texture* generate_debris(Size s, Color, Color, Color, Size ) {
+static Texture* generate_debris(Size s, Color, Color, Color, int size_clusters, int num_clusters) {
     Color* img = new Color[s.w * s.h];
-
+    for (int i = 0; i < num_clusters; i++) {
+        Point cluster_center(random_uniform(size_clusters, s.w - 1 - size_clusters), random_uniform(size_clusters, s.h - 1 - size_clusters));
+        
+    }
 
     return new Texture(s, img);
 }

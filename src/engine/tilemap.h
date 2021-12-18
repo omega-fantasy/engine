@@ -53,6 +53,7 @@ class Tilemap : public Composite, Input::Listener {
         float zoom = 1;
         std::string cursor_texture;
         Point last_mouse_pos = {0, 0};
+        bool infinite_scrolling = false;
 
         void mouse_clicked(Point p);
         void fix_camera();

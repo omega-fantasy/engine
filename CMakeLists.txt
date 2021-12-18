@@ -8,29 +8,10 @@ include_directories(. src)
 if (UNIX)
 
 if (DBG)
-target_link_options(engine PRIVATE -fuse-ld=lld -lSDL2 
+target_link_options(engine PRIVATE -fuse-ld=lld -lSDL2
     -fsanitize=address -fsanitize=undefined -fsanitize=implicit-conversion
 )
-target_compile_options(engine PRIVATE
-    -g3
-    -fno-omit-frame-pointer
-    -Ofast
-    -march=native
-    -std=c++17
-    -fno-exceptions
-    -fno-rtti
-    -Wpedantic
-    -Wall
-    -Wextra
-    -Wshadow
-    -Wnull-dereference
-    -Wunreachable-code
-    -Wuninitialized
-    -Wunused
-    -Waddress
-    -Warray-bounds
-    -Wdiv-by-zero
-    -Wenum-compare
+target_compile_options(engine PRIVATE -g3 -fno-omit-frame-pointer -O0 -march=native -std=c++17 -fno-exceptions -fno-rtti -Wpedantic -Wall -Wextra
     -fsanitize=address -fsanitize=undefined -fsanitize=implicit-conversion
 )
 endif (DBG)

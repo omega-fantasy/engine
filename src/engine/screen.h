@@ -71,11 +71,6 @@ class Screen : public Composite {
 
         void blit(Color* texture, Size texture_size, Point start, Box canvas, bool transparent) {
             Point texture_end(start.x + texture_size.w, start.y + texture_size.h);
-            if (texture_end.x < canvas.a.x || texture_end.y < canvas.a.y || 
-                start.x > canvas.b.x || start.y > canvas.b.y) {
-                return; 
-            }
-
             Point texture_start(0, 0);
             Point texture_endcut(0, 0);
             if (start.x < canvas.a.x) {
@@ -105,7 +100,7 @@ class Screen : public Composite {
                 }
             } else {
                 int linesize = (texture_size.w - texture_start.x - texture_endcut.x) * sizeof(int);
-                for (int y = 0; y < texture_size.h - texture_start.y - texture_endcut.y; y++) {
+                for (int y = 0; linesize > 0 && y < texture_size.h - texture_start.y - texture_endcut.y; y++) {
                     std::memcpy(screen_pixels + y * size.w, texture_pixels + y * texture_size.w, linesize);
                 }
             }
