@@ -1,0 +1,42 @@
+let a 5
+let b 3
+let e exp(2 8)
+print(e)
+
+let c add(a b)
+
+print(c)
+
+if greater(a b)
+    print(a)
+else
+    print(b)
+end
+
+for i 0 5
+    if less(i b)
+        print(i)
+    end
+end
+
+let mylist list_new()
+list_add(mylist 3.14)
+list_add(mylist 42)
+for index 0 list_max(mylist)
+    let value list_get(mylist index)
+    print(list_get(mylist index))
+end
+
+for j 0 2
+    for k 0 2
+        let c add(j k)
+        print(add(j k))
+    end
+end
+
+let hello "Hello_World!"
+
+print_functions()
+print_variables()
+print(hello)
+print(mylist)

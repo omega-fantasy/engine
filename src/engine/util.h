@@ -141,6 +141,8 @@ std::vector<std::pair<Color*, Size>> load_letters(const std::string& fontpath, i
 std::vector<std::string> filelist(const std::string& path, const std::string& filter = "");
 std::string filename(const std::string& filepath);
 std::vector<std::string> split(const std::string& s, char delim);
+void replace(std::string& s, const std::string& from, const std::string& to);
+double to_double(const std::string& s);
 void print(const std::string& s);
 
 Color* create_window(Size s, bool fullscreen);

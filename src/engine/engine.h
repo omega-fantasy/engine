@@ -10,6 +10,7 @@ class Screen;
 class AudioPlayer;
 class Simulation;
 class ConfigParser;
+class ScriptParser;
 class ScenePlayer;
 
 #include "util.h"
@@ -31,6 +32,7 @@ class GameEngine {
         AudioPlayer* audio() { return m_audio; }
         Simulation* sim() { return m_sim; }
         ConfigParser* config() { return m_config; }
+        ScriptParser* script() { return m_script; }
         ScenePlayer* scenes() { return m_scenes; }
 
     private:
@@ -42,6 +44,7 @@ class GameEngine {
         AudioPlayer* m_audio = nullptr;
         Simulation* m_sim = nullptr;
         ConfigParser* m_config = nullptr;
+        ScriptParser* m_script = nullptr;
         ScenePlayer* m_scenes = nullptr;
 };
 
