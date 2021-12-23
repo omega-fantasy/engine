@@ -4,8 +4,9 @@
 #include "util.h"
 #include <setjmp.h>
 
-class ScriptParser {
+class Script {
     public:
+    enum Type { Number, List, String, Any };
     using Value = std::variant<double, std::vector<double>*, std::string>;
     using ParamList = std::vector<Value>;
     using Function = std::function<Value(ParamList&)>;
@@ -13,9 +14,25 @@ class ScriptParser {
     static std::string s(const Value& v) { return std::get<2>(v); }
     static std::vector<double>* dl(Value& v) { return std::get<1>(v); }
 
+    static std::string type_to_str(Type t) {
+        switch (t) {
+            case Type::Number: return "number";
+            case Type::List:   return "list";
+            case Type::String:  return "string";
+            default: return "any";
+        }
+    }
+
+    static std::string valuetype_to_str(const Value& v) {
+        if (std::holds_alternative<double>(v)) { return "number"; } 
+        else if (std::holds_alternative<std::string>(v)) { return "string"; }
+        else if (std::holds_alternative<std::vector<double>*>(v)) { return "list"; }
+        return "?";
+    }
+
     class Context {
         public:
-        Context(std::map<std::string, std::pair<Function, int>>& f): functions(f) {}
+        Context(std::map<std::string, std::pair<Function, std::vector<Type>>>& f): functions(f) {}
         ~Context() {
             // TODO: clean up heap variables
         }
@@ -24,6 +41,23 @@ class ScriptParser {
             print("ERROR while parsing script in line " + std::to_string(current_line) + "!");
             print("Description: " + msg);
             longjmp(env, 1);
+        }
+
+        void check_parameters(std::string& fname, ParamList& params) {
+            auto& expected_params = functions[fname].second;
+            if (params.size() != expected_params.size()) {
+                panic("function " + fname + " expected " + std::to_string(expected_params.size()) + " parameters but recevied " + std::to_string(params.size()));
+            }
+            for (int i = 0; i < (int)params.size(); i++) {
+                if (expected_params[i] == Type::Any) {
+                    continue;
+                }
+                std::string expected = type_to_str(expected_params[i]);
+                std::string actual = valuetype_to_str(params[i]);
+                if (expected != actual) {
+                    panic("while evaluating parameter " + std::to_string(i+1) + " of function " + fname + ": expected type " + expected + " but received type " + actual);
+                }
+            }
         }
 
         void execute(const std::string& filepath) {
@@ -128,16 +162,14 @@ class ScriptParser {
                         }
                         params.push_back(v);
                     }
-                    if (find->second.second != (int)params.size()) {
-                        panic("function " + fname + " expected " + std::to_string(find->second.second) + " parameters but recevied " + std::to_string(params.size()));
-                    }
+                    check_parameters(fname, params);
                     return find->second.first(params);
                 } else {
                     panic("unknown function " + fname);
                 }
             }
             if (current_word.size() > 2 && current_word[0] == '"' &&  current_word.back() == '"') { // string literal
-                return current_word;
+                return current_word.substr(1, current_word.size()-2);
             }
             double d = to_double(current_word);
             if (!std::isnan(d)) { // number literal
@@ -147,45 +179,42 @@ class ScriptParser {
                 return variables[current_word];
             }
     
-            panic("could not parse token " + current_word);
+            panic("undeclared identifier " + current_word);
             return -1.0;
         }
         
         int current_line = 1;
         std::map<std::string, Value> variables;
-        std::map<std::string, std::pair<Function, int>>& functions;
+        std::map<std::string, std::pair<Function, std::vector<Type>>>& functions;
         std::map<int, int> loops;
         std::map<int, std::pair<int, int>> branches;
     };
 
-    void add_function(const std::string& name, int num_params, const Function& f) {
-        functions[name] = {f, num_params};
+    void add_function(const std::string& name, const std::vector<Type>& types, const Function& f) {
+        functions[name] = {f, types};
     }
 
-    ScriptParser() {
-        add_function("add", 2, [](ParamList& params){return d(params[0]) + d(params[1]);});
-        add_function("sub", 2, [](ParamList& params){return d(params[0]) - d(params[1]);});
-        add_function("mul", 2, [](ParamList& params){return d(params[0]) * d(params[1]);});
-        add_function("div", 2, [](ParamList& params){return d(params[0]) / d(params[1]);});
-        add_function("sqrt", 1, [](ParamList& params){return std::sqrt(d(params[0]));});
-        add_function("exp", 2, [](ParamList& params){return std::pow(d(params[0]), d(params[1]));});
-        add_function("log", 1, [](ParamList& params){return std::log10(d(params[0]));});
-        add_function("floor", 1, [](ParamList& params){return std::floor(d(params[0]));});
-        add_function("ceil", 1, [](ParamList& params){return std::ceil(d(params[0]));});
-
-        add_function("and", 2, [](ParamList& params){return d(params[0]) && d(params[1]) ? 1.0 : 0.0;});
-        add_function("or", 2, [](ParamList& params){return d(params[0]) || d(params[1]) ? 1.0 : 0.0;});
-        add_function("not", 1, [](ParamList& params){return !d(params[0]) ? 1.0 : 0.0;});
-        add_function("greater", 2, [](ParamList& params){ return d(params[0]) > d(params[1]) ? 1.0 : 0.0; });
-        add_function("less", 2, [](ParamList& params){ return d(params[0]) < d(params[1]) ? 1.0 : 0.0; });
-        add_function("equal", 2, [](ParamList& params){ return d(params[0]) == d(params[1]) ? 1.0 : 0.0; });
-
-        add_function("list_new", 0, [](ParamList&){ return new std::vector<double>(); });
-        add_function("list_get", 2, [](ParamList& params){ return (*dl(params[0]))[d(params[1])]; });
-        add_function("list_add", 2, [](ParamList& params){ dl(params[0])->push_back(d(params[1])); return 0.0; });
-        add_function("list_max", 1, [](ParamList& params){ return (double)dl(params[0])->size() - 1; });
-        
-        add_function("print", 1, [](ParamList& params){
+    Script() {
+        add_function("add", {Type::Number, Type::Number}, [](ParamList& params){return d(params[0]) + d(params[1]);});
+        add_function("sub", {Type::Number, Type::Number}, [](ParamList& params){return d(params[0]) - d(params[1]);});
+        add_function("mul", {Type::Number, Type::Number}, [](ParamList& params){return d(params[0]) * d(params[1]);});
+        add_function("div", {Type::Number, Type::Number}, [](ParamList& params){return d(params[0]) / d(params[1]);});
+        add_function("sqrt", {Type::Number}, [](ParamList& params){return std::sqrt(d(params[0]));});
+        add_function("exp", {Type::Number, Type::Number}, [](ParamList& params){return std::pow(d(params[0]), d(params[1]));});
+        add_function("log", {Type::Number}, [](ParamList& params){return std::log10(d(params[0]));});
+        add_function("floor", {Type::Number}, [](ParamList& params){return std::floor(d(params[0]));});
+        add_function("ceil", {Type::Number}, [](ParamList& params){return std::ceil(d(params[0]));});
+        add_function("and", {Type::Number, Type::Number}, [](ParamList& params){return d(params[0]) && d(params[1]) ? 1.0 : 0.0;});
+        add_function("or", {Type::Number, Type::Number}, [](ParamList& params){return d(params[0]) || d(params[1]) ? 1.0 : 0.0;});
+        add_function("not", {Type::Number}, [](ParamList& params){return !d(params[0]) ? 1.0 : 0.0;});
+        add_function("greater", {Type::Number, Type::Number}, [](ParamList& params){ return d(params[0]) > d(params[1]) ? 1.0 : 0.0; });
+        add_function("less", {Type::Number, Type::Number}, [](ParamList& params){ return d(params[0]) < d(params[1]) ? 1.0 : 0.0; });
+        add_function("equal", {Type::Number, Type::Number}, [](ParamList& params){ return d(params[0]) == d(params[1]) ? 1.0 : 0.0; });
+        add_function("list_new", {}, [](ParamList&){ return new std::vector<double>(); });
+        add_function("list_get", {Type::List, Type::Number}, [](ParamList& params){ return (*dl(params[0]))[d(params[1])]; });
+        add_function("list_add", {Type::List, Type::Number}, [](ParamList& params){ dl(params[0])->push_back(d(params[1])); return 0.0; });
+        add_function("list_max", {Type::List}, [](ParamList& params){ return (double)dl(params[0])->size() - 1; });
+        add_function("print", {Type::Any}, [](ParamList& params){
             if (std::holds_alternative<double>(params[0])) { print(std::to_string(d(params[0]))); }
             else if (std::holds_alternative<std::string>(params[0])) { print(s(params[0])); }
             else if (std::holds_alternative<std::vector<double>*>(params[0])) {
@@ -195,12 +224,19 @@ class ScriptParser {
             }
             return 0.0;
         });
-        add_function("print_functions", 0, [&](ParamList&){
-            print("All defined functions and their parameter count:");
-            for (auto& pair : current_context->functions) { print(pair.first + "(" + std::to_string(pair.second.second) + ")"); }
+        add_function("print_functions", {}, [&](ParamList&){
+            print("All defined functions and their parameters:");
+            for (auto& pair : current_context->functions) { 
+                std::string s = pair.first + "(";
+                for (int i = 0; i < (int)pair.second.second.size(); i++) {
+                    if (i > 0) s += " ";
+                    s += type_to_str(pair.second.second[i]);
+                }
+                print(s + ")");
+            }
             return 0.0;
         });
-        add_function("print_variables", 0, [&](ParamList&){
+        add_function("print_variables", {}, [&](ParamList&){
             print("All defined variables and their current value:");
             for (auto& pair : current_context->variables) {
                 if (std::holds_alternative<double>(pair.second)) {
@@ -226,7 +262,7 @@ class ScriptParser {
         delete current_context;
     }
 
-    std::map<std::string, std::pair<Function, int>> functions;
+    std::map<std::string, std::pair<Function, std::vector<Type>>> functions;
     Context* current_context = nullptr;
     inline static jmp_buf env;
 };

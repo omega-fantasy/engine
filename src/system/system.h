@@ -16,6 +16,7 @@ class GameSystem {
         Simulate* simulate() { return m_simulate; }
 
     private:
+        void init_script_api();
         Player* m_player = nullptr;
         Buildings* m_buildings = nullptr;
         Research* m_research = nullptr;

@@ -6,6 +6,7 @@
 #include "engine/ui.h"
 #include "engine/audio.h"
 #include "engine/db.h"
+#include "engine/scripting.h"
 #include "system/player.h"
 #include "system/system.h"
     
@@ -52,13 +53,8 @@ class SimulateButton : public Button, public Composite::Listener, public Message
                 Point current = towns.back();
                 towns.pop_back();
                 Engine.audio()->play_sound("menu2");
+                Engine.script()->execute("./scripts/profit.script");
                 auto& town = Engine.db()->get_table<Buildings::Town>("towns")->get(current);
-                for (auto& building : town.buildings) {
-                    if (building.x < 0 || building.y < 0) {
-                        break;
-                    }
-                    System.player()->change_cash(100);
-                }
                 Size s = Engine.map()->get_size();
                 std::string text = "This is the town of " + town.name.toStdString() + "!";
                 auto messagebox = new MessageBox({1.0 * s.w, 0.35 * s.h}, text, this);

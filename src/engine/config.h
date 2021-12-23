@@ -13,7 +13,8 @@ class ConfigParser {
         auto end() { return std::get<2>(val).end(); }
         Node& operator[](const std::string& key) { return std::get<1>(val)[key];}
         double d() { return std::stod(std::get<0>(val)); }
-        double i() { return std::stoi(std::get<0>(val)); }
+        int i() { return std::stoi(std::get<0>(val)); }
+        std::map<std::string, Node> map() { return std::get<1>(val); }
         operator std::string() const { return std::get<0>(val); }
         operator std::vector<Node>() const { return std::get<2>(val); }
         bool contains(const std::string& s) { return std::get<1>(val).find(s) != std::get<1>(val).end(); }

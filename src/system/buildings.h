@@ -17,6 +17,7 @@ class Buildings {
             Type(const std::string& n, int p): name(n), price(p) {}
             std::string name;
             int price;
+            std::map<std::string, double> properties;
         };
 
         struct Building {
@@ -42,9 +43,12 @@ class Buildings {
     
         Buildings() {
             for (auto& t : Engine.config()->get("buildings")["buildings"]) {
-                m_types[t["name"]] = Type(t["name"], std::stoi(t["price"]));
+                m_types[t["name"]] = Type(t["name"], t["price"].i());
+                for (auto& p : t["properties"].map()) {
+                    m_types[t["name"]].properties[p.first] = p.second.d(); 
+                }
             }
-            max_town_distance = std::stoi(Engine.config()->get("buildings")["max_town_distance"]);
+            max_town_distance = Engine.config()->get("buildings")["max_town_distance"].i();
         }
 
         virtual ~Buildings() {}
@@ -55,6 +59,17 @@ class Buildings {
                 ret.push_back(t.second);
             }
             return ret;
+        }
+
+        bool has_property(Point building, const std::string& property) {
+            return Engine.db()->get_table<double>(property)->exists(building);
+        }
+
+        double property_value(Point building, const std::string& property) {
+            if (has_property(building, property)) {
+                return Engine.db()->get_table<double>(property)->get(building);
+            }
+            return 0.0;
         }
 
         void destroy(Point p) {
@@ -83,6 +98,16 @@ class Buildings {
             auto table = Engine.db()->get_table<Town>("towns");
             for (auto it = table->begin(); it != table->end(); ++it) {
                 ret.push_back({(*it).name.toStdString(), it.key()});
+            }
+            return ret;
+        }
+
+        std::vector<Point> buildinglist(Point town) {
+            std::vector<Point> ret;
+            auto& t = Engine.db()->get_table<Town>("towns")->get(town);
+            for (auto b : t.buildings) {
+                if (b.x < 0 || b.y < 0) break;
+                ret.push_back(b);
             }
             return ret;
         }
@@ -122,8 +147,12 @@ class Buildings {
 
             if (Engine.map()->set_tile(name, p)) {
                 Engine.db()->get_table<Building>("buildings")->add(p);
+                for (auto& param : m_types[name].properties) {
+                    Engine.db()->get_table<double>(param.first)->add(p) = param.second;
+                }
                 return true;
             }
+            System.player()->change_cash(price);
             return false;
         }
 

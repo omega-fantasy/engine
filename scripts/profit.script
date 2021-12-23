@@ -1,0 +1,22 @@
+let total_profit 0
+let towns towns()
+
+for town_index 0 list_max(towns) 
+    let town list_get(towns town_index)
+    let buildings buildings(town)
+    for building_index 0 list_max(buildings) 
+        let building list_get(buildings building_index)
+        if has_property(building "GenerateMoney")
+            let profit property_value(building "GenerateMoney")
+            let total_profit add(total_profit profit)
+        else
+            let total_profit sub(total_profit 5)    
+        end
+    end
+end
+
+change_player_money(total_profit)
+
+print("Script_executed_successfully!")
+print("Player_money_was_increased_by:")
+print(total_profit)

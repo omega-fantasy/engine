@@ -15,7 +15,7 @@ GameEngine Engine;
 
 GameEngine::GameEngine() {
     m_config = new ConfigParser();
-    m_script = new ScriptParser();
+    m_script = new Script();
 }
 
 void GameEngine::init(Size screen_size) {
@@ -27,7 +27,6 @@ void GameEngine::init(Size screen_size) {
     m_map = new Tilemap({0, 0});
     m_sim = new Simulation();
     m_scenes = new ScenePlayer();
-    m_script->execute("./scripts/test.script");
 }
         
 void GameEngine::save_state(const char* filename) {
