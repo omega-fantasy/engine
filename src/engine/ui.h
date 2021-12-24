@@ -44,10 +44,24 @@ class Text : public Composite {
             short total_height = 0;
 
             for (int i = 0; i < (int)txt.size(); i++) {
+                bool newline = i < (int)txt.size()-1 ? txt[i] == 10 : false;
+                if (newline) {
+                    total_height += line_height;
+                    lines[current_line].insert(lines[current_line].end(), word.begin(), word.end());
+                    lines.push_back(std::vector<Texture*>());
+                    line_length = 0;
+                    line_height = 0;
+                    current_line++;
+                    word.clear();
+                    word_length = 0;
+                    continue;
+                }
                 Texture* t = Engine.textures()->get(txt[i], txt_height);
-                word.push_back(t);
-                word_length += t->size().w;
-                line_height = t->size().h > line_height ? t->size().h : line_height;
+                if (t) {
+                    word.push_back(t);
+                    word_length += t->size().w;
+                    line_height = t->size().h > line_height ? t->size().h : line_height;
+                }
                 if (txt[i] == ' ' || i == (int)(txt.size()-1)) {
                     if (line_length + word_length < size.w) {
                         lines[current_line].insert(lines[current_line].end(), word.begin(), word.end());

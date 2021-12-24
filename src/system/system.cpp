@@ -19,13 +19,16 @@ void GameSystem::init_script_api() {
         for (auto& b : System.buildings()->buildinglist(Script::d(params[0]))) { ret->push_back(b); }
         return ret;
     });
-    script->add_function("has_property", {Script::Type::Number, Script::Type::String}, [&](Script::ParamList& params){
+    script->add_function("property_exists", {Script::Type::Number, Script::Type::String}, [&](Script::ParamList& params){
         return System.buildings()->has_property(int(Script::d(params[0])), Script::s(params[1])) ? 1.0 : 0.0;
     });
-    script->add_function("property_value", {Script::Type::Number, Script::Type::String}, [&](Script::ParamList& params){
-        return System.buildings()->property_value(int(Script::d(params[0])), Script::s(params[1]));
+    script->add_function("property_get", {Script::Type::Number, Script::Type::String}, [&](Script::ParamList& params){
+        return System.buildings()->get_property(int(Script::d(params[0])), Script::s(params[1]));
     });
-    script->add_function("change_player_money", {Script::Type::Number}, [&](Script::ParamList& params){
+    script->add_function("property_set", {Script::Type::Number, Script::Type::String, Script::Type::Number}, [&](Script::ParamList& params){
+        System.buildings()->set_property(int(Script::d(params[0])), Script::s(params[1]), Script::d(params[2])); return 0.0;
+    });
+    script->add_function("player_money_change", {Script::Type::Number}, [&](Script::ParamList& params){
         System.player()->change_cash(Script::d(params[0])); return 0.0;
     });  
 }

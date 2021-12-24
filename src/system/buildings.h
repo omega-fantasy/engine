@@ -65,11 +65,18 @@ class Buildings {
             return Engine.db()->get_table<double>(property)->exists(building);
         }
 
-        double property_value(Point building, const std::string& property) {
+        double get_property(Point building, const std::string& property) {
             if (has_property(building, property)) {
                 return Engine.db()->get_table<double>(property)->get(building);
             }
             return 0.0;
+        }
+
+        void set_property(Point building, const std::string& property, double value) {
+            if (has_property(building, property)) {
+                Engine.db()->get_table<double>(property)->add(building);
+            }
+            Engine.db()->get_table<double>(property)->get(building) = value;
         }
 
         void destroy(Point p) {
