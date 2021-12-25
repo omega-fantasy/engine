@@ -79,8 +79,14 @@ class Script {
                 replace(line, ",", " ");
                 replace(line, "(", "( ");
                 replace(line, ")", " )");
-                lines.push_back(split(line, ' '));
-                const std::vector<std::string>& words = lines.back();
+                bool in_string = false;
+                for (auto& c : line) { 
+                    if (c == '"') in_string = !in_string;
+                    if (in_string && c == ' ') c = '$';
+                }
+                auto words = split(line, ' ');
+                for (auto& word : words) replace(word, "$", " ");
+                lines.push_back(words);
                 if (words.size() > 0) {
                     if (words[0] == "for" || words[0] == "else" || words[0] == "if") {
                         stack.push_back({words[0], l});
@@ -89,6 +95,7 @@ class Script {
                         stack.pop_back();
                         if (token.first == "for") {
                             loops[token.second] = l;
+                            end_to_loop[l] = token.second;
                         } else if (token.first == "if") {
                             branches[token.second] = {-1, l};
                         } else if (token.first == "else") {
@@ -113,8 +120,10 @@ class Script {
                 return 0.0;
             }
             if (idx == 0) {
-                if (words[0] == "let" && words.size() >= 3) { // assignment
-                    variables[words[1]] = evaluate(words, 2);
+                if (words[0] == "end") {
+                    if (end_to_loop.find(current_line) != end_to_loop.end()) {
+                        current_line = end_to_loop[current_line] - 1;
+                    }
                     return 0.0;
                 } else if (words[0] == "for") { // loop
                     if (variables.find(words[1]) == variables.end()) {
@@ -126,6 +135,9 @@ class Script {
                         current_line = loops[current_line];
                         variables.erase(variables.find(words[1]));
                     }
+                    return 0.0;
+                } else if (words[0] == "let" && words.size() >= 3) { // assignment
+                    variables[words[1]] = evaluate(words, 2);
                     return 0.0;
                 } else if (words[0] == "if" && words.size() >= 3) {
                     if (d(evaluate(words, 1)) == 0) {
@@ -144,14 +156,6 @@ class Script {
                         }
                     }
                     panic("could not match else in line " + std::to_string(current_line));
-                } else if (words[0] == "end") {
-                    for (auto& pair : loops) {
-                        if (pair.second == current_line) {
-                            current_line = pair.first - 1;
-                            return 0.0;
-                        }
-                    }
-                    return 0.0;
                 }
             }
 
@@ -178,18 +182,15 @@ class Script {
                 } else {
                     panic("unknown function " + fname);
                 }
-            }
-            if (current_word.size() > 2 && current_word[0] == '"' &&  current_word.back() == '"') { // string literal
+            } else if (variables.find(current_word) != variables.end()) { // variable
+                return variables[current_word];
+            } else if (current_word.size() >= 2 && current_word[0] == '"' &&  current_word.back() == '"') { // string literal
                 return current_word.substr(1, current_word.size()-2);
             }
             double d = to_double(current_word);
             if (!std::isnan(d)) { // number literal
                 return d;
             }
-            if (variables.find(current_word) != variables.end()) { // variable
-                return variables[current_word];
-            }
-    
             panic("undeclared identifier " + current_word);
             return -1.0;
         }
@@ -199,6 +200,7 @@ class Script {
         std::ofstream outfile;
         std::map<std::string, std::pair<Function, std::vector<Type>>>& functions;
         std::map<int, int> loops;
+        std::map<int, int> end_to_loop;
         std::map<int, std::pair<int, int>> branches;
     };
 
@@ -208,7 +210,10 @@ class Script {
         add_function("add", {Type::Number, Type::Number}, [](ParamList& params){return d(params[0]) + d(params[1]);});
         add_function("sub", {Type::Number, Type::Number}, [](ParamList& params){return d(params[0]) - d(params[1]);});
         add_function("mul", {Type::Number, Type::Number}, [](ParamList& params){return d(params[0]) * d(params[1]);});
-        add_function("div", {Type::Number, Type::Number}, [](ParamList& params){return d(params[0]) / d(params[1]);});
+        add_function("div", {Type::Number, Type::Number}, [&](ParamList& params){
+            if (d(params[1]) == 0.0) current_context->panic("attempted to divide by 0");
+            return d(params[0]) / d(params[1]);
+        });
         add_function("sqrt", {Type::Number}, [](ParamList& params){return std::sqrt(d(params[0]));});
         add_function("exp", {Type::Number, Type::Number}, [](ParamList& params){return std::pow(d(params[0]), d(params[1]));});
         add_function("log", {Type::Number}, [](ParamList& params){return std::log10(d(params[0]));});
@@ -222,9 +227,11 @@ class Script {
         add_function("less", {Type::Number, Type::Number}, [](ParamList& params){ return d(params[0]) < d(params[1]) ? 1.0 : 0.0; });
         add_function("equal", {Type::Number, Type::Number}, [](ParamList& params){ return d(params[0]) == d(params[1]) ? 1.0 : 0.0; });
         add_function("list_new", {}, [](ParamList&){ return new std::vector<double>(); });
-        add_function("list_get", {Type::List, Type::Number}, [](ParamList& params){ 
+        add_function("list_get", {Type::List, Type::Number}, [&](ParamList& params){ 
             auto list = dl(params[0]); int idx = d(params[1]);
-            return idx < (int)list->size() ? (*list)[idx] : 0.0;
+            if (idx < (int)list->size()) return (*list)[idx];
+            current_context->panic("attempted to get list index " + std::to_string(idx) + " but maximum index is " + std::to_string(list->size()));
+            return 0.0;
         });
         add_function("list_add", {Type::List, Type::Number}, [](ParamList& params){ dl(params[0])->push_back(d(params[1])); return 0.0; });
         add_function("list_max", {Type::List}, [](ParamList& params){ return (double)dl(params[0])->size() - 1; });

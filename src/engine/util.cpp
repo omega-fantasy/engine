@@ -1,6 +1,7 @@
 #include "util.h"
 
 #include <iostream>
+#include <cstdlib>
 #include "extern/SDL2/SDL.h"
 
 
@@ -113,20 +114,13 @@ void replace(std::string& s, const std::string& from, const std::string& to) {
 }
 
 double to_double(const std::string& s) {
-    double d;
-    std::stringstream ss(s);
-    ss >> d;
-    if (!ss.fail()) {
-        return d;
+    const char* cp = s.c_str();
+    char* endptr;
+    double d = strtod(cp, &endptr);
+    if (cp == endptr) {
+        return std::nan("");
     }
-    /*
-    long long l;
-    ss >> l;
-    if (ss.fail()) {
-        return l;
-    }
-    */
-    return std::nan("");
+    return d;
 }
 
 void print(const std::string& s) { std::cout << s << std::endl; }
