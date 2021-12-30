@@ -37,5 +37,4 @@ player_money_change(total_profit)
 
 # below are just some print statements so we can see that our script executed successfully
 print("Script executed successfully!")
-print("Player money was increased by:")
-print(total_profit)
+print("Player money was increased by: $total_profit")

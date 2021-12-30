@@ -30,6 +30,17 @@ class Script {
         return "unknown";
     }
 
+    static std::string val_to_str(Value& v) {
+        if (std::holds_alternative<double>(v)) { return std::to_string(d(v)); } 
+        else if (std::holds_alternative<std::string>(v)) { return s(v); }
+        else if (std::holds_alternative<std::vector<double>*>(v)) {
+            std::string list = "[";
+            for (auto& d : *dl(v)) { list += " " + std::to_string(d); }
+            return list + " ]";
+        }
+        return "";
+    }
+
     class Context {
         public:
         Context(const std::string name, std::map<std::string, std::pair<Function, std::vector<Type>>>& f): outfile(name, std::ios::app), functions(f) {}
@@ -76,16 +87,15 @@ class Script {
             std::vector<std::vector<std::string>> lines = {{"script start"}};
             int l = 1;
             for (std::string line; std::getline(stream, line);) {
-                replace(line, ",", " ");
                 replace(line, "(", "( ");
                 replace(line, ")", " )");
                 bool in_string = false;
                 for (auto& c : line) { 
                     if (c == '"') in_string = !in_string;
-                    if (in_string && c == ' ') c = '$';
+                    if (in_string && c == ' ') c = '|';
                 }
                 auto words = split(line, ' ');
-                for (auto& word : words) replace(word, "$", " ");
+                for (auto& word : words) replace(word, "|", " ");
                 lines.push_back(words);
                 if (words.size() > 0) {
                     if (words[0] == "for" || words[0] == "else" || words[0] == "if") {
@@ -111,7 +121,7 @@ class Script {
                 panic("could not match " + stack[0].first + " on line " + std::to_string(stack[1].second) + " with its end");
             }
             for (current_line = 1; current_line < (int)lines.size(); current_line++) {
-                d(evaluate(lines[current_line], 0));
+                evaluate(lines[current_line], 0);
             }
         }
 
@@ -201,6 +211,7 @@ class Script {
         std::map<std::string, std::pair<Function, std::vector<Type>>>& functions;
         std::map<int, int> loops;
         std::map<int, int> end_to_loop;
+        std::map<int, int> break_to_end;
         std::map<int, std::pair<int, int>> branches;
     };
 
@@ -219,6 +230,7 @@ class Script {
         add_function("log", {Type::Number}, [](ParamList& params){return std::log10(d(params[0]));});
         add_function("floor", {Type::Number}, [](ParamList& params){return std::floor(d(params[0]));});
         add_function("ceil", {Type::Number}, [](ParamList& params){return std::ceil(d(params[0]));});
+        add_function("abs", {Type::Number}, [](ParamList& params){return std::fabs(d(params[0]));});        
         add_function("random", {Type::Number, Type::Number}, [](ParamList& params){return random_uniform(d(params[0]), d(params[1]));});
         add_function("and", {Type::Number, Type::Number}, [](ParamList& params){return d(params[0]) && d(params[1]) ? 1.0 : 0.0;});
         add_function("or", {Type::Number, Type::Number}, [](ParamList& params){return d(params[0]) || d(params[1]) ? 1.0 : 0.0;});
@@ -235,14 +247,18 @@ class Script {
         });
         add_function("list_add", {Type::List, Type::Number}, [](ParamList& params){ dl(params[0])->push_back(d(params[1])); return 0.0; });
         add_function("list_max", {Type::List}, [](ParamList& params){ return (double)dl(params[0])->size() - 1; });
-        add_function("print", {Type::Any}, [&](ParamList& params){
-            if (std::holds_alternative<double>(params[0])) { current_context->output(std::to_string(d(params[0]))); }
-            else if (std::holds_alternative<std::string>(params[0])) { current_context->output(s(params[0])); }
-            else if (std::holds_alternative<std::vector<double>*>(params[0])) {
-                std::string list = "[";
-                for (auto& d : *dl(params[0])) { list += " " + std::to_string(d); }
-                current_context->output(list + " ]");
+        add_function("print", {Type::String}, [&](ParamList& params){
+            std::string str = s(params[0]);
+            for (auto& word : split(str, ' ')) {
+                if (!word.empty() && word[0] == '$') {
+                    if (current_context->variables.find(word.substr(1)) != current_context->variables.end()) {
+                        replace(str, word, val_to_str(current_context->variables[word.substr(1)]));
+                    } else {
+                        current_context->panic("could not find value of variable " + word);
+                    }
+                }
             }
+            current_context->output(str);
             return 0.0;
         });
         add_function("print_functions", {}, [&](ParamList&){
@@ -260,15 +276,7 @@ class Script {
         add_function("print_variables", {}, [&](ParamList&){
             current_context->output("All defined variables and their current value:");
             for (auto& pair : current_context->variables) {
-                if (std::holds_alternative<double>(pair.second)) {
-                    current_context->output(pair.first + ": " + std::to_string(d(pair.second))); 
-                } else if (std::holds_alternative<std::string>(pair.second)) {
-                    current_context->output(pair.first + ": " + s(pair.second));
-                } else if (std::holds_alternative<std::vector<double>*>(pair.second)) {
-                    std::string list = "[";
-                    for (auto& d : *dl(pair.second)) { list += " " + std::to_string(d); }
-                    current_context->output(pair.first + ": " + list + " ]");
-                }
+                current_context->output(pair.first + ": " + val_to_str(pair.second));
             }
             return 0.0;
         });
@@ -291,6 +299,5 @@ class Script {
     inline static std::string current_outputs;
     inline static jmp_buf env;
 };
-
 
 #endif

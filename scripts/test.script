@@ -2,17 +2,17 @@ let a 5
 let b 3
 let c add(a b)
 
-# print(c)
+#print("$c")
 
 if greater(a b)
-    #print(a)
+    #print("$a")
 else
-    #print(b)
+    #print("$b")
 end
 
 for i 0 5
-    if less(i b)
-       # print(i)
+    if greater(i b)
+        #print("$i")
     end
 end
 
@@ -21,30 +21,27 @@ list_add(mylist 3.14)
 list_add(mylist 42)
 for index 0 list_max(mylist)
     let value list_get(mylist index)
-    #print(list_get(mylist index))
+    #print("$value")
 end
 
 for j 0 2
     for k 0 2
-       #print(add(j k))
+        #print("$j $k")
     end
 end
 
-let hello "Hello_World!"
+let hello "Hello World!"
 
 # print_functions()
 # print_variables()
 # print(hello)
 # print(mylist)
 
-print("Calculating 2^16:")
 let e exp(2 16)
-print(e)
+print("Calculating 2^16: $e")
 print(" ")
-print("Calculating square root of 144:")
 let f sqrt(144)
-print(f)
+print("Calculating square root of 144: $f")
 print(" ")
-print("Calculating log10 of 1000:")
 let g log(1000)
-print(g)
+print("Calculating log10 of 1000: $g")
