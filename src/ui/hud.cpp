@@ -4,12 +4,12 @@
 #include "ui/researchmenu.h"
 #include "ui/timewidget.h"
 #include "ui/minimap.h"
-#include "ui/boxtexture.h"
+#include "ui/commonui.h"
 #include "engine/scripting.h"
 
-class BackButton : public Button {
+class BackButton : public BasicButton {
     public:
-        BackButton(HUD* p): Button({0, 0}, "<- Back"), parent(p) {}
+        BackButton(HUD* p, Size s): BasicButton(s, "<- Back"), parent(p) {}
         void mouse_clicked(Point) {
             Engine.audio()->play_sound("menu1");
             parent->change_layout(parent->create_standard_layout(), false);
@@ -17,9 +17,9 @@ class BackButton : public Button {
         HUD* parent;
 };
 
-class BuildingsButton : public Button {
+class BuildingsButton : public BasicButton {
     public:
-        BuildingsButton(HUD* p): Button({0, 0}, "Build"), parent(p) {}
+        BuildingsButton(HUD* p, Size s): BasicButton(s, "Build"), parent(p) {}
         void mouse_clicked(Point) {
             Engine.audio()->play_sound("menu1");
             Size s = parent->get_size();
@@ -29,9 +29,9 @@ class BuildingsButton : public Button {
         HUD* parent;
 };
 
-class ResearchButton : public Button {
+class ResearchButton : public BasicButton {
     public:
-        ResearchButton(HUD* p): Button({0, 0}, "Research"), parent(p) {}
+        ResearchButton(HUD* p, Size s): BasicButton(s, "Research"), parent(p) {}
         void mouse_clicked(Point) {
             Engine.audio()->play_sound("menu1");
             Size s = parent->get_size();
@@ -41,18 +41,18 @@ class ResearchButton : public Button {
         HUD* parent;
 };
 
-class EventButton : public Button {
+class EventButton : public BasicButton {
     public:
-        EventButton(HUD* p): Button({0, 0}, "Events"), parent(p) {}
+        EventButton(HUD* p, Size s): BasicButton(s, "Events"), parent(p) {}
         void mouse_clicked(Point) {
             Engine.audio()->play_sound("menu1");
         }
         HUD* parent;
 };
 
-class TownsButton : public Button {
+class TownsButton : public BasicButton {
     public:
-        TownsButton(HUD* p): Button({0, 0}, "Towns"), parent(p) {}
+        TownsButton(HUD* p, Size s): BasicButton(s, "Towns"), parent(p) {}
         void mouse_clicked(Point) {
             Engine.audio()->play_sound("menu1");
             Size s = parent->get_size();
@@ -64,7 +64,7 @@ class TownsButton : public Button {
 
 class FPSButton : public Button {
     public:
-        FPSButton(): Button({0, 0}, "0") {}
+        FPSButton(Size s): Button(s, "0") {}
         void draw() {
             if (listener_registered) {
                 set_text("FPS: " + std::to_string(Engine.screen()->fps()));
@@ -73,9 +73,9 @@ class FPSButton : public Button {
         }
 };
 
-class TestScriptButton : public Button, public MessageBox::Listener {
+class TestScriptButton : public BasicButton, public MessageBox::Listener {
     public:
-        TestScriptButton(): Button({0, 0}, "Test Script") {}
+        TestScriptButton(Size s): BasicButton(s, "Test Script") {}
         void mouse_clicked(Point) {
             Engine.audio()->play_sound("menu1");
             Engine.script()->execute("./scripts/test.script");
@@ -91,32 +91,29 @@ class TestScriptButton : public Button, public MessageBox::Listener {
         }
 };
 
-/*
-class NewButton : public Button {
+class NewButton : public BasicButton {
     public:
-        NewButton(): Button({0, 0}, "New Game") {}
+        NewButton(Size s): BasicButton(s, "New Map") {}
         void mouse_clicked(Point) {
             Engine.map()->randomize_map();
             Engine.screen()->set_update(true);
-            Engine.sim()->reset();
             Engine.audio()->play_sound("menu2");
             System.init();
         }
 };
-*/
 
-class SaveButton : public Button {
+class SaveButton : public BasicButton {
     public:
-        SaveButton(): Button({0, 0}, "Save Game") {}
+        SaveButton(Size s): BasicButton(s, "Save Game") {}
         void mouse_clicked(Point) { 
             Engine.save_state("state.sav");
             Engine.audio()->play_sound("menu2");
         }
 };
 
-class LoadButton : public Button {
+class LoadButton : public BasicButton {
     public:
-        LoadButton(): Button({0, 0}, "Load Game") {}
+        LoadButton(Size s): BasicButton(s, "Load Game") {}
         void mouse_clicked(Point) { 
             std::ifstream ifile("state.sav");
             if (ifile) {
@@ -139,11 +136,8 @@ void HUD::change_layout(const std::vector<std::pair<Composite*, Point>>& new_lay
     children.clear();
     Point start = {0, 0};
     if (back) {
-        Texture* texture_button = new Texture(0xFF555555, {0.8 * size.w, 0.08 * size.h});
-        auto back_button = new BackButton(this);
-        back_button->set_texture(texture_button);
-        add_child(back_button, {0.1 * size.w, 0.0 * size.h});
-        start.y += 0.15 * size.h;
+        add_child(new BackButton(this, {0.8 * size.w, 0.06 * size.h}), {0.1 * size.w, 0.01 * size.h});
+        start.y += 0.1 * size.h;
     }
     for (auto child : new_layout) {
         Point p = child.second + start;
@@ -154,10 +148,10 @@ void HUD::change_layout(const std::vector<std::pair<Composite*, Point>>& new_lay
 
 std::vector<std::pair<Composite*, Point>> HUD::create_standard_layout() {
     std::vector<std::pair<Composite*, Point>> ret;
-    std::vector<Button*> buttons = {new BuildingsButton(this), new ResearchButton(this), new EventButton(this), new TownsButton(this), new SimulateButton(), new SaveButton(), new LoadButton(), new TestScriptButton()};
+    Size s(0.8 * size.w, 0.06 * size.h);
+    std::vector<Button*> buttons = {new BuildingsButton(this, s), new ResearchButton(this, s), new EventButton(this, s), new TownsButton(this, s), new SimulateButton(s), new NewButton(s), new SaveButton(s), new LoadButton(s), new TestScriptButton(s)};
     for (int i = 0; i < (int)buttons.size(); i++) {
-        buttons[i]->set_texture(new Texture(0xFF555555, {0.8 * size.w, 0.06 * size.h}));
-        ret.push_back({buttons[i], {0.1 * size.w, (i+1) * 0.07 * size.h}});
+        ret.push_back({buttons[i], {0.1 * size.w, (i+0.1) * 0.06 * size.h}});
     }
     return ret;
 }

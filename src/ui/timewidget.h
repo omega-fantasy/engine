@@ -2,6 +2,7 @@
 #define TIMEWIDGET_H
 
 #include "ui/messagebox.h"
+#include "ui/commonui.h"
 #include "engine/engine.h"
 #include "engine/ui.h"
 #include "engine/audio.h"
@@ -10,9 +11,9 @@
 #include "system/player.h"
 #include "system/system.h"
     
-class SimulateButton : public Button, public Composite::Listener, public MessageBox::Listener {
+class SimulateButton : public BasicButton, public Composite::Listener, public MessageBox::Listener {
     public:
-        SimulateButton(): Button({0, 0}, "Next Turn") {}
+        SimulateButton(Size s): BasicButton(s, "Next Turn") {}
 
         virtual void confirmed(MessageBox* messagebox) {
             delete messagebox;

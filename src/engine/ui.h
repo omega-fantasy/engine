@@ -116,9 +116,9 @@ class Text : public Composite {
 
 class TextInput : public Text, public Input::Listener {
     public:
-        TextInput(unsigned short max_length, Size sz): Text("|", 0.8 * sz.h, sz), max(max_length) {
+        TextInput(unsigned short max_length, Size sz): Text("_", 0.8 * sz.h, sz), max(max_length) {
             size = sz;
-            m_texture = new Texture((unsigned)0xFF000000, size); 
+            //m_texture = new Texture((unsigned)0xFF000000, size); 
             MAX_NO_UPDATES = 1;
         }
 
@@ -137,13 +137,13 @@ class TextInput : public Text, public Input::Listener {
             Size old_size = size;
             if (key == "Backspace" && current_text.size() > 0) {
                 current_text.pop_back();
-                set_text(current_text + "|", 0.8 * size.h);
+                set_text(current_text + "_", 0.8 * size.h);
                 size = old_size;
                 return;
             } else if ((int)current_text.size() > max + 1 || key.size() != 1) {
                 return;
             }
-            set_text(current_text + key + "|", 0.8 * size.h);
+            set_text(current_text + key + "_", 0.8 * size.h);
             size = old_size;
             current_text += key;
         }

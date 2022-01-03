@@ -1,23 +1,24 @@
 #ifndef TEXTINPUTWIDGET_H
 #define TEXTINPUTWIDGET_H
 
+#include "ui/commonui.h"
 #include "engine/engine.h"
 #include "engine/ui.h"
 #include "engine/audio.h"
 #include "engine/input.h"
 
-class TextInputWidget : public Composite {
+class TextInputWidget : public BasicBox {
     public:
     class Listener {
         public:
             virtual void confirmed(TextInputWidget*) {};
     };
     
-    class ConfirmButton : public Button {
+    class ConfirmButton : public BasicButton {
         public:
-            ConfirmButton(TextInputWidget* p): Button({0, 0}, "Confirm"), parent(p) {}
+            ConfirmButton(TextInputWidget* p, Size s): BasicButton(s, "Confirm"), parent(p) {}
             virtual ~ConfirmButton() {}
-            void mouse_clicked(Point) {
+            virtual void mouse_clicked(Point) {
                 if (!parent) {
                     delete this;
                 } else {
@@ -27,16 +28,16 @@ class TextInputWidget : public Composite {
                     }
                 }
             }
-            void init() {
+            virtual void init() {
+                BasicButton::init();
                 Engine.input()->add_mouse_listener(this, {pos, size}, true);
             }
-
             TextInputWidget* parent = nullptr;
     };
    
-   TextInputWidget(Size sz, const std::string& text, TextInputWidget::Listener* l = nullptr): Composite(sz), title(text), listener(l) {
-        m_texture = new Texture(0xFF000000, size); 
-    }
+   TextInputWidget(Size sz, const std::string& text, TextInputWidget::Listener* l = nullptr): BasicBox(sz), title(text), listener(l) {
+        MAX_NO_UPDATES = 1;       
+   }
 
     virtual ~TextInputWidget() {
         delete title_text;
@@ -49,13 +50,11 @@ class TextInputWidget : public Composite {
 
     void init() {
         Engine.input()->disable();
-        title_text = new Text(title, 0.15 * size.h, {1.0 * size.w, 0.2 * size.h});
-        add_child(title_text, {0.0 * size.w, 0.0 * size.h});
+        title_text = new Text(title, 0.15 * size.h, {0.8 * size.w, 0.2 * size.h});
+        add_child(title_text, {0.025 * size.w, 0.1 * size.h});
         input = new TextInput(12, {1.0 * size.w, 0.2 * size.h});
-        add_child(input, {0.0 * size.w, 0.33 * size.h});
-
-        button = new ConfirmButton(this);
-        button->set_texture(new Texture(0xFF555555, {1.0 * size.w, 0.2 * size.h}));
+        add_child(input, {0.025 * size.w, 0.33 * size.h});
+        button = new ConfirmButton(this, {1.0 * size.w, 0.2 * size.h});
         add_child(button, {0.0 * size.w, 0.8 * size.h});
     }
 

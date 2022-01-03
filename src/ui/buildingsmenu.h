@@ -21,11 +21,7 @@ class BuildingsMenu : public Composite, Tilemap::Listener, TextInputWidget::List
         virtual void tile_clicked(Point p); 
         void draw();
         void init();
-
         BuildButton* active_button = nullptr;
-        unsigned color_default = 0xFFAA0000;
-        unsigned color_active = 0xFFAAAA00;
-        Size button_size = {0.8 * size.w, 0.07 * size.h};
         Text* text_cash = nullptr;
         Point created_town = {-1, -1};
 };

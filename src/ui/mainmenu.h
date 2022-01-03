@@ -4,6 +4,7 @@
 #include "ui/hud.h"
 #include "ui/textinputwidget.h"
 #include "ui/messagebox.h"
+#include "ui/commonui.h"
 #include "engine/engine.h"
 #include "engine/tilemap.h"
 #include "engine/input.h"
@@ -82,9 +83,12 @@ class MainMenu : public Composite, TextInputWidget::Listener, Composite::Listene
     virtual void fade_completed(Composite*) {
         Engine.screen()->clear();
         System.init();
+        System.player()->set_worldname("Gaia");
+        /*
         System.player()->set_worldname(m_widget->current_text());
         delete m_widget;
         Engine.input()->disable();
+        */
         auto map_screen = new MapScreen();
         Engine.screen()->add_child(map_screen, {0, 0});
         Engine.map()->randomize_map();
@@ -101,23 +105,27 @@ class MainMenu : public Composite, TextInputWidget::Listener, Composite::Listene
   private:
     TextInputWidget* m_widget = nullptr;
 
-    class NewButton : public Button {
+    class NewButton : public BasicButton {
         public:
-            NewButton(MainMenu* p): Button({0, 0}, "New Game"), parent(p) {}
+            NewButton(MainMenu* p, Size s): BasicButton(s, "New Game"), parent(p) {}
             void mouse_clicked(Point) {
                 Engine.screen()->set_update(true);
                 Engine.audio()->play_sound("menu2");
                 parent->unregister_buttons();
                 Engine.screen()->clear();
+                /*
                 Size s = Engine.screen()->get_size();
                 Engine.screen()->add_child(new TextInputWidget({s.w * 0.75, s.h * 0.5}, "Enter the world's name:", parent), {s.w * 0.125, s.h * 0.25});
+                */
+                Engine.screen()->set_overlay(0xFF000000, 10, parent);
+                Engine.input()->disable();
             }
             MainMenu* parent;
     };
 
-    class LoadButton : public Button {
+    class LoadButton : public BasicButton {
         public:
-            LoadButton(MainMenu* p): Button({0, 0}, "Load Game"), parent(p) {}
+            LoadButton(MainMenu* p, Size s): BasicButton(s, "Load Game"), parent(p) {}
             void mouse_clicked(Point) { 
                 std::ifstream ifile("state.sav");
                 if (ifile) {
@@ -131,15 +139,15 @@ class MainMenu : public Composite, TextInputWidget::Listener, Composite::Listene
             MainMenu* parent;
     };
     
-    class OptionsButton : public Button {
+    class OptionsButton : public BasicButton {
         public:
-            OptionsButton(): Button({0, 0}, "Options") {}
+            OptionsButton(Size s): BasicButton(s, "Options") {}
             void mouse_clicked(Point) { }
     };
     
-    class ExitButton : public Button {
+    class ExitButton : public BasicButton {
         public:
-            ExitButton(): Button({0, 0}, "Quit") {}
+            ExitButton(Size s): BasicButton(s, "Quit") {}
             void mouse_clicked(Point) { exit(0); }
     };
                 
@@ -150,15 +158,14 @@ class MainMenu : public Composite, TextInputWidget::Listener, Composite::Listene
     }
 
     void init() {
-        Texture* texture_button = new Texture(0xFF555555, {1.0 * size.w, 0.3 * size.h});
+        Size s(1.0 * size.w, 0.3 * size.h);
+        buttons = {new NewButton(this, s), new LoadButton(this, s), new OptionsButton(s), new ExitButton(s)};
         for (int i = 0; i < 4; i++) {
-            add_child(buttons[i], {0.0, 0.33 * i * size.h});
-            buttons[i]->set_texture(texture_button);
+            add_child(buttons[i], {0.0, 0.3 * i * size.h});
         }
-
     }
         
-    Button* buttons[4] = {new NewButton(this), new LoadButton(this), new OptionsButton(), new ExitButton()};
+    std::vector<Button*> buttons = {nullptr};
 };
 
 #endif
