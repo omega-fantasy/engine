@@ -14,7 +14,7 @@ class Tilemap : public Composite, Input::Listener {
                 virtual void map_changed() {}
         };
         
-        Tilemap(Size screen_size): Composite(screen_size) {}
+        Tilemap(Size screen_size): Composite(screen_size) { MAX_NO_UPDATES = 10; }
         void create_map(Size screen_size);
 
         bool set_ground(const std::string& texture_name, Point p, bool blocked);

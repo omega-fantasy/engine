@@ -5,6 +5,7 @@
 #include "screen.h"
 #include "texture.h"
 #include "input.h"
+#include <cctype>
 
 class ProgressBar : public Composite {
     public:
@@ -116,18 +117,11 @@ class Text : public Composite {
 
 class TextInput : public Text, public Input::Listener {
     public:
-        TextInput(unsigned short max_length, Size sz): Text("_", 0.8 * sz.h, sz), max(max_length) {
-            size = sz;
-            //m_texture = new Texture((unsigned)0xFF000000, size); 
-            MAX_NO_UPDATES = 1;
-        }
+        TextInput(int max_length, Size sz): Text("_", 0.8 * sz.h, sz), max(max_length) { size = sz; }
 
-        void init() {
-            std::vector<std::string> letters;
-            for (char c = 0; c < 127; c++) {
-                letters.push_back(std::string(1, c));
-            }
-            letters.push_back("Backspace");
+        virtual void init() {
+            std::vector<std::string> letters = {"Backspace", "Space"};
+            for (char c = 0; c < 127; c++) { letters.push_back(std::string(1, c)); }
             Engine.input()->add_key_listeners(this, letters, true);
         }
         
@@ -138,17 +132,20 @@ class TextInput : public Text, public Input::Listener {
             if (key == "Backspace" && current_text.size() > 0) {
                 current_text.pop_back();
                 set_text(current_text + "_", 0.8 * size.h);
-                size = old_size;
-                return;
-            } else if ((int)current_text.size() > max + 1 || key.size() != 1) {
-                return;
+            } else if (current_text.size() <= max) {
+                if (key.size() == 1) {
+                    char c = Engine.input()->shift_held() ? key[0] : (char)std::tolower(key[0]);
+                    set_text(current_text + c + "_", 0.8 * size.h);
+                    current_text += c;
+                } else if (key == "Space") {
+                    set_text(current_text + " _", 0.8 * size.h);
+                    current_text += " ";
+                }
             }
-            set_text(current_text + key + "_", 0.8 * size.h);
             size = old_size;
-            current_text += key;
         }
     
-        unsigned short max;
+        int max;
         std::string current_text;
 };
 

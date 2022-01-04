@@ -37,6 +37,7 @@ class Input {
                 } 
             }
         }
+        bool shift_held() { return shift_active; }
 
         void handleInputs() {
             std::vector<std::string> pressed;
@@ -65,8 +66,14 @@ class Input {
                         }
                     }
                 }
+                if (key == "Left Shift") {
+                    shift_active = true;
+                }
             }
             for (auto& key : released) {
+                if (key == "Left Shift") {
+                    shift_active = false;
+                }
                 held.erase(key);
             }
             Point current_mouse_pos = mouse_pos();
@@ -97,6 +104,7 @@ class Input {
         std::vector<Input::Listener*> remove_list;
         bool enabled = true;
         bool clear_temps = false;
+        bool shift_active = false;
         Point last_mouse_pos;
 };
 

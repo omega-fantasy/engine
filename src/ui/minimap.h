@@ -11,7 +11,6 @@ class MiniMap : public Composite, Input::Listener, Tilemap::Listener {
     public:
         MiniMap(Size sz): Composite(sz) {
             m_texture = new Texture((unsigned)0x00000000, sz);
-            MAX_NO_UPDATES = 2;
         }
 
         void create() {

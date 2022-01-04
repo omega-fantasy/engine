@@ -45,7 +45,7 @@ class Composite {
          }
 
     protected:
-         int MAX_NO_UPDATES = 10;
+         int MAX_NO_UPDATES = 1;
          std::vector<Color> overlay_colors;
          Listener* overlay_listener = nullptr;
          Texture* m_overlay = nullptr;
