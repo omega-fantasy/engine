@@ -4,7 +4,6 @@
 #include <cstdlib>
 #include "extern/SDL2/SDL.h"
 
-
 std::pair<Color*, Size> load_bmp(const std::string& filepath) {
     SDL_Surface* img = SDL_LoadBMP(filepath.c_str());
     Size s = {img->w, img->h};
@@ -297,4 +296,19 @@ Point mouse_pos() {
     int mx, my;
     SDL_GetMouseState(&mx, &my);
     return {mx, my};
+}
+
+
+#define SINFL_IMPLEMENTATION
+#define SDEFL_IMPLEMENTATION
+#include "extern/sdefl.h"
+#include "extern/sinfl.h"
+static struct sdefl sdefl;
+
+void compress(void* in_data, int in_len, void* out_data, int& out_len) {
+    out_len = sdeflate(&sdefl, out_data, in_data, in_len, 1);
+}
+
+void decompress(void* in_data, int in_len, void* out_data, int out_len) {
+    sinflate(out_data, out_len, in_data, in_len);
 }

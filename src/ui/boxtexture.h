@@ -18,9 +18,9 @@ class BoxTexture : public Texture {
                 Point p(x, y);
                 Color* current = pixels + x + y * s.w;
                 Point pts[4] = {{x, 0}, {(int)s.w-1, y}, {0, y}, {x, (int)s.h-1}};
-                unsigned d1 = 0.25 * border_width;
-                unsigned d2 = 0.75 * border_width;
-                unsigned d3 = border_width;
+                short d1 = 0.25 * border_width;
+                short d2 = 0.75 * border_width;
+                short d3 = border_width;
                 if (p.distance(pts[0]) < d1 || p.distance(pts[1]) < d1 || p.distance(pts[2]) < d1 || p.distance(pts[3]) < d1) {
                     *current = c_border - darken;
                 } else if (p.distance(pts[0]) < d2 || p.distance(pts[1]) < d2 || p.distance(pts[2]) < d2 || p.distance(pts[3]) < d2) {

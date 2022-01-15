@@ -195,7 +195,17 @@ class Script {
             } else if (variables.find(current_word) != variables.end()) { // variable
                 return variables[current_word];
             } else if (current_word.size() >= 2 && current_word[0] == '"' &&  current_word.back() == '"') { // string literal
-                return current_word.substr(1, current_word.size()-2);
+                std::string str = current_word.substr(1, current_word.size()-2);
+                for (auto& word : split(str, ' ')) {
+                    if (!word.empty() && word[0] == '$') {
+                        if (variables.find(word.substr(1)) != variables.end()) {
+                            replace(str, word, val_to_str(variables[word.substr(1)]));
+                        } else {
+                            panic("could not find value of variable " + word);
+                        }
+                    }
+                }
+                return str;
             }
             double d = to_double(current_word);
             if (!std::isnan(d)) { // number literal
@@ -247,20 +257,7 @@ class Script {
         });
         add_function("list_add", {Type::List, Type::Number}, [](ParamList& params){ dl(params[0])->push_back(d(params[1])); return 0.0; });
         add_function("list_max", {Type::List}, [](ParamList& params){ return (double)dl(params[0])->size() - 1; });
-        add_function("print", {Type::String}, [&](ParamList& params){
-            std::string str = s(params[0]);
-            for (auto& word : split(str, ' ')) {
-                if (!word.empty() && word[0] == '$') {
-                    if (current_context->variables.find(word.substr(1)) != current_context->variables.end()) {
-                        replace(str, word, val_to_str(current_context->variables[word.substr(1)]));
-                    } else {
-                        current_context->panic("could not find value of variable " + word);
-                    }
-                }
-            }
-            current_context->output(str);
-            return 0.0;
-        });
+        add_function("print", {Type::String}, [&](ParamList& params){ current_context->output(s(params[0])); return 0.0; });
         add_function("print_functions", {}, [&](ParamList&){
             current_context->output("All defined functions and their parameters:");
             for (auto& pair : current_context->functions) { 

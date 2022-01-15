@@ -3,9 +3,66 @@
 
 #include "util.h"
 
+class CompressedFile {
+    public:
+    CompressedFile(const std::string filename, bool write): write_mode(write) {
+        std::ios_base::openmode mode = write ? std::ios::out : std::ios::in;
+        file = std::fstream(filename, mode | std::ios::binary);
+        if (!write) {
+            read_block();
+        }
+    }
+
+    ~CompressedFile() {
+        if (write_mode && buffer_pos > 0) {
+            write_block();
+        }
+    }
+
+    void write(const char* s, int n) {
+        for (int i = 0; i < n; i++) {
+            buffer[buffer_pos++] = s[i];
+            if (buffer_pos >= BLOCK_SIZE) {
+                write_block();
+            }
+        }
+    }
+
+    void read(char* s, int n) {
+        for (int i = 0; i < n; i++) {
+            s[i] = buffer[buffer_pos++];
+            if (buffer_pos >= BLOCK_SIZE) {
+                read_block();
+            }
+        }
+    }
+
+    void write_block() {
+        compress(buffer, BLOCK_SIZE, comp_buffer, comp_block_size);
+        file.write((char*)(&comp_block_size), sizeof(comp_block_size));
+        file.write(comp_buffer, comp_block_size);
+        buffer_pos = 0;
+    }
+
+    void read_block() {
+        file.read((char*)(&comp_block_size), sizeof(comp_block_size));
+        file.read(comp_buffer, comp_block_size);
+        decompress(comp_buffer, comp_block_size, buffer, 2 * BLOCK_SIZE);
+        buffer_pos = 0;
+    }
+
+    int comp_block_size = 0;
+    bool write_mode;
+    static constexpr int BLOCK_SIZE = 32000;
+    std::fstream file;
+    int buffer_pos = 0;
+    char buffer[2 * BLOCK_SIZE];
+    char comp_buffer[2 * BLOCK_SIZE];
+};
+
 class TableBase {
     public:
-        void write(std::ofstream& file) {
+        void write(CompressedFile& file) {
             int namesize = name.size();
             file.write((char*)(&namesize), sizeof(namesize)); 
             file.write(name.c_str(), name.size());
@@ -24,7 +81,7 @@ class TableBase {
             file.write((char*)(mem.data()), nRows * elem_size);
         }
         
-        void read(std::ifstream& file) {
+        void read(CompressedFile& file) {
             int nRows = -1;
             file.read((char*)(&nRows), sizeof(nRows));
             for (int i = 0; i < nRows; i++) {
@@ -105,7 +162,7 @@ class Table : public TableBase {
 
 class MatrixBase {
     public:
-        void write(std::ofstream& file) {
+        void write(CompressedFile& file) {
             int namesize = name.size();
             file.write((char*)(&namesize), sizeof(namesize)); 
             file.write(name.c_str(), name.size());
@@ -115,7 +172,7 @@ class MatrixBase {
             file.write(mem, w * h * elem_size);
         }
         
-        void read(std::ifstream& file) {
+        void read(CompressedFile& file) {
             file.read((char*)(&w), sizeof(w)); 
             file.read((char*)(&h), sizeof(h)); 
             file.read((char*)(&elem_size), sizeof(elem_size));
@@ -185,7 +242,7 @@ class Database {
         }
 
         void write(const std::string& filename) {
-            std::ofstream file(filename, std::ios::out | std::ios::binary);
+            CompressedFile file(filename, true);
             int namesize = name.size();
             file.write((char*)(&namesize), sizeof(namesize)); 
             file.write(name.c_str(), name.size());
@@ -206,8 +263,7 @@ class Database {
             for (auto item : matrices) delete item.second;
             tables.clear();
             matrices.clear();
-
-            std::ifstream file(filename, std::ios::out | std::ios::binary);
+            CompressedFile file(filename, false);
             int namesize = -1;
             file.read((char*)(&namesize), sizeof(namesize));
             name.resize(namesize); 
@@ -239,32 +295,3 @@ class Database {
 };
 
 #endif
-
-/*
-struct MyClass {
-    MyClass(int a, int b): x(a), y(b) {}
-    int x = 5;
-    int y = 3;
-    char c[32] = "xyz";
-};
-
-int main () {
-    auto db = Database("foobar");
-    auto t = db.create_table<MyClass>("default");
-    int num = 1000000;
-    for (int i = 0; i < num; i++)    
-        t->create(i, 1, 2);
-    for (auto& val : *t) {
-        val.x = 5;
-    }
-    auto m = db.create_matrix<MyClass>("default2", 100, 100);
-    for (auto& val : *m) {
-        val.x = 13;
-    }
-    db.write("foobar");
-    
-    auto db2 = Database("foobar2");
-    db2.read("foobar2");
-    return 0;
-}
-*/

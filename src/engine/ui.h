@@ -132,7 +132,7 @@ class TextInput : public Text, public Input::Listener {
             if (key == "Backspace" && current_text.size() > 0) {
                 current_text.pop_back();
                 set_text(current_text + "_", 0.8 * size.h);
-            } else if (current_text.size() <= max) {
+            } else if ((int)current_text.size() <= max) {
                 if (key.size() == 1) {
                     char c = Engine.input()->shift_held() ? key[0] : (char)std::tolower(key[0]);
                     set_text(current_text + c + "_", 0.8 * size.h);

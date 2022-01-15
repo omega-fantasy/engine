@@ -162,4 +162,7 @@ void play_wav(AudioHandle audio, bool music);
 void pressed_keys(std::vector<std::string>& pressed, std::vector<std::string>& released);
 Point mouse_pos();
 
+void compress(void* in_data, int in_len, void* out_data, int& out_len);
+void decompress(void* in_data, int in_len, void* out_data, int out_len);
+
 #endif
