@@ -207,14 +207,14 @@ void Tilemap::draw() {
         Box visible = visible_tiles();
         BigPoint cam_ref(pos.x - camera_pos.x, pos.y - camera_pos.y);
         Size tile_size(tile_dim.w * zoom, tile_dim.h * zoom);
-        for (short y = visible.a.y; y <= visible.b.y; y++) { 
+        parallel_for(visible.a.y, visible.b.y, [&](int y) {
             for (short x = visible.a.x; x <= visible.b.x; x++) {
                 WrappingPoint p(x, y, map_size);
                 Texture::ID id = tiles_ground->get(p.x, p.y);
                 Texture* t = Engine.textures()->get(id < 0 ? -id : id);
                 Engine.screen()->blit(t->pixels(zoom), t->size(zoom), {cam_ref.x + x * tile_size.w, cam_ref.y + y * tile_size.h}, canvas, false);
             }
-        }
+        });
         for (short y = visible.a.y; y <= visible.b.y; y++) {
             for (short x = visible.a.x; x <= visible.b.x; x++) {
                 WrappingPoint p(x, y, map_size);

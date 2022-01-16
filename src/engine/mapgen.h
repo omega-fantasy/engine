@@ -188,11 +188,10 @@ class MapGen {
                     heightmap->get(x_map, y_map) = 0;
                 }
             }
-            std::vector<Anchor> current_anchors;
-            for (short y_cell = 0; y_cell < num_cells.h; y_cell++) {
+            parallel_for(0, num_cells.h-1, [&](int y_cell) {
                 for (short x_cell = 0; x_cell < num_cells.w; x_cell++) {
                     Box sample_cells(Point(x_cell - sample_dist, y_cell - sample_dist), Point(x_cell + sample_dist, y_cell + sample_dist));
-                    current_anchors.clear();
+                    std::vector<Anchor> current_anchors;
                     for (short y_cells = sample_cells.a.y; y_cells <= sample_cells.b.y; y_cells++) {
                         for (short x_cells = sample_cells.a.x; x_cells <= sample_cells.b.x; x_cells++) {
                             short x_cur = x_cells;
@@ -269,7 +268,7 @@ class MapGen {
                         }
                     }
                 }
-            }
+            });
 
             for (short y_map = 1; y_map < map_size.h - wall_height; y_map++) {
                 for (short x_map = 1; x_map < map_size.w - 1; x_map++) {

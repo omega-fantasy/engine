@@ -165,4 +165,6 @@ Point mouse_pos();
 void compress(void* in_data, int in_len, void* out_data, int& out_len);
 void decompress(void* in_data, int in_len, void* out_data, int out_len);
 
+void parallel_for(int begin, int end, const std::function<void(int)>& f);
+
 #endif

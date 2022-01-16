@@ -299,6 +299,7 @@ Point mouse_pos() {
 }
 
 
+
 #define SINFL_IMPLEMENTATION
 #define SDEFL_IMPLEMENTATION
 #include "extern/sdefl.h"
@@ -311,4 +312,90 @@ void compress(void* in_data, int in_len, void* out_data, int& out_len) {
 
 void decompress(void* in_data, int in_len, void* out_data, int out_len) {
     sinflate(out_data, out_len, in_data, in_len);
+}
+
+
+
+
+#include <deque>
+#include <thread>
+#include <mutex>
+#include <atomic>
+#include <condition_variable>
+
+class ThreadPool {
+    public:
+    ThreadPool(int threads = 4) {
+        for (int i = 0; i < threads; ++i) {
+            m_threads.emplace_back(std::thread([this]() {
+                while (true) {
+                    std::unique_lock<std::mutex> latch(m_queue_mutex);
+                    cv_task.wait(latch, [this](){ return stop || !m_workQueue.empty(); });
+                    if (!m_workQueue.empty())
+                    {
+                        ++busy;
+
+                        auto fn = m_workQueue.front();
+                        m_workQueue.pop_front();
+
+                        latch.unlock();
+
+                        fn();
+
+                        latch.lock();
+                        --busy;
+                        cv_finished.notify_one();
+                    } else if (stop) {
+                        break;
+                    }
+                }
+            }));
+        }
+    }
+
+    ~ThreadPool() {
+        std::unique_lock<std::mutex> latch(m_queue_mutex);
+        stop = true;
+        cv_task.notify_all();
+        latch.unlock();
+        for (auto& t : m_threads) {
+            t.join();
+        }
+    }
+
+    template<typename F>
+    void add(F&& f) {
+        std::unique_lock<std::mutex> lock(m_queue_mutex);
+        m_workQueue.emplace_back(std::forward<F>(f));
+        cv_task.notify_one();
+    }
+
+    void wait() {
+        std::unique_lock<std::mutex> lock(m_queue_mutex);
+        cv_finished.wait(lock, [this](){ return m_workQueue.empty() && (busy == 0); });
+    }
+
+private:
+    std::vector<std::thread> m_threads;
+    std::deque<std::function<void(void)>> m_workQueue;
+    std::mutex m_queue_mutex;
+    std::condition_variable cv_task;
+    std::condition_variable cv_finished;
+    unsigned busy = 0;
+    bool stop = false;
+};
+
+static ThreadPool pool;
+constexpr static int num_threads = 4;
+
+void parallel_for(int begin, int end, const std::function<void(int)>& f) {
+    int block_size = (end - begin) / num_threads;
+    int block_begin = begin;
+    int block_end = begin + block_size - 1;
+    for (int t = 0; t < num_threads; t++) {
+        pool.add([=](){ for (int i = block_begin; i <= block_end; i++) f(i);});
+        block_begin += block_size;
+        block_end = t == num_threads - 2 ? end : block_end + block_size; 
+    }
+    pool.wait();
 }

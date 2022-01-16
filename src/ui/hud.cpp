@@ -62,15 +62,21 @@ class TownsButton : public BasicButton {
         HUD* parent;
 };
 
-class FPSButton : public Button {
+class FPSButton : public BasicButton {
     public:
-        FPSButton(Size s): Button(s, "0") {}
+        FPSButton(Size s): BasicButton(s, "0") {}
         void draw() {
             if (listener_registered) {
-                set_text("FPS: " + std::to_string(Engine.screen()->fps()));
+                int current_fps = Engine.screen()->fps();
+                if (current_fps != last_fps) {
+                    current_fps = current_fps > 1000 ? 1000: current_fps;
+                    set_text("FPS: " + std::to_string(current_fps));
+                    last_fps = current_fps;
+                }
             }
             Button::draw();
         }
+        int last_fps = -1;
 };
 
 class TestScriptButton : public BasicButton, public MessageBox::Listener {
@@ -149,7 +155,7 @@ void HUD::change_layout(const std::vector<std::pair<Composite*, Point>>& new_lay
 std::vector<std::pair<Composite*, Point>> HUD::create_standard_layout() {
     std::vector<std::pair<Composite*, Point>> ret;
     Size s(0.8 * size.w, 0.06 * size.h);
-    std::vector<Button*> buttons = {new BuildingsButton(this, s), new ResearchButton(this, s), new EventButton(this, s), new TownsButton(this, s), new SimulateButton(s), new NewButton(s), new SaveButton(s), new LoadButton(s), new TestScriptButton(s)};
+    std::vector<Button*> buttons = {new BuildingsButton(this, s), new ResearchButton(this, s), new EventButton(this, s), new TownsButton(this, s), new SimulateButton(s), new NewButton(s), new SaveButton(s), new LoadButton(s), new TestScriptButton(s), new FPSButton(s)};
     for (int i = 0; i < (int)buttons.size(); i++) {
         ret.push_back({buttons[i], {0.1 * size.w, (i+0.1) * 0.06 * size.h}});
     }
