@@ -69,8 +69,46 @@ class Screen : public Composite {
             std::memset(pixels, 0, sizeof(int) * size.w * size.h); 
         }
 
-        void blit(Color* texture, Size texture_size, Point start, Box canvas, bool transparent);
-
+        inline void blit(Color* texture, Size texture_size, Point start, Box canvas, bool transparent) {
+            Point texture_end(start.x + texture_size.w, start.y + texture_size.h);
+            Point texture_start(0, 0);
+            Point texture_endcut(0, 0);
+            if (start.x < canvas.a.x) {
+                texture_start.x = (canvas.a.x - start.x);
+                start.x = canvas.a.x;
+            } else if (texture_end.x > canvas.b.x) {
+                texture_endcut.x = texture_end.x - canvas.b.x;
+            }
+            if (start.y < canvas.a.y) {
+                texture_start.y = (canvas.a.y - start.y);
+                start.y = canvas.a.y;
+            } else if (texture_end.y > canvas.b.y) {
+                texture_endcut.y = texture_end.y - canvas.b.y;
+            }
+            
+            unsigned* texture_pixels = (unsigned*)(texture + texture_start.y * texture_size.w + texture_start.x); 
+            unsigned* screen_pixels = (unsigned*)(pixels + start.y * size.w + start.x);
+            short upper_bound_x = texture_size.w - texture_start.x - texture_endcut.x;
+            short upper_bound_y = texture_size.h - texture_start.y - texture_endcut.y;
+            if (upper_bound_y > 0 && upper_bound_x > 0) {
+                if (transparent) {
+                    for (short y = 0; y < upper_bound_y; y++) {
+                        for (short x = 0; x < upper_bound_x; x++) {
+                            unsigned color1 = screen_pixels[y * size.w + x];
+                            unsigned color2 = texture_pixels[y * texture_size.w + x];
+                            unsigned rb = (color1 & 0xff00ff) + (((color2 & 0xff00ff) - (color1 & 0xff00ff)) * ((color2 & 0xff000000) >> 24) >> 8);
+                            unsigned g  = (color1 & 0x00ff00) + (((color2 & 0x00ff00) - (color1 & 0x00ff00)) * ((color2 & 0xff000000) >> 24) >> 8);
+                            screen_pixels[y * size.w + x] = (rb & 0xff00ff) | (g & 0x00ff00);
+                        }
+                    }
+                } else {
+                    for (short y = 0; y < upper_bound_y; y++) {
+                        std::memcpy(screen_pixels + y * size.w, texture_pixels + y * texture_size.w, upper_bound_x * sizeof(unsigned));
+                    }
+                }
+            }
+        }
+        
         void update() {
             long long t = now() - last_update;
             long long delta = 16660 - t;
@@ -82,8 +120,9 @@ class Screen : public Composite {
 
         int fps() { return m_fps; }
 
-    private:
         int* pixels;
+
+    private:
         long long last_update = now();
         int m_fps = 0;
 };

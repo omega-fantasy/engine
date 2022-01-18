@@ -11,7 +11,7 @@ class Texture {
         Texture(Size s, Color* pixels);
         Texture(Color color, Size s);
         virtual ~Texture();
-        Color* pixels(float zoom = 1.0f) {
+        inline Color* pixels(float zoom = 1.0f) {
             if (zoom == 0.125f) return pixels_zoomout[3];
             if (zoom == 0.25f) return pixels_zoomout[2];
             if (zoom == 0.5f) return pixels_zoomout[1];
@@ -43,7 +43,7 @@ class TextureManager {
         void reinit();
         void register_texture(const std::string& name, Texture* t);
         void add_folder(const std::string& folder);
-        Texture* get(Texture::ID id);
+        inline Texture* get(Texture::ID id) { return id_to_texture[id]; }
         Texture* get(const std::string& name);
         Texture* get(char letter, int size);
         std::string generate_name(const std::string& command, const std::vector<std::string>& params);

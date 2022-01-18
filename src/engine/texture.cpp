@@ -258,13 +258,6 @@ void TextureManager::add_folder(const std::string& folder) {
     }
 }
 
-Texture* TextureManager::get(Texture::ID id) {
-    if (!id_to_texture[id]) {
-        return nullptr;
-    }
-    return id_to_texture[id]; 
-}
-        
 Texture* TextureManager::get(const std::string& name) {
     if (name_to_texture.find(name) != name_to_texture.end()) {
         return name_to_texture[name]; 

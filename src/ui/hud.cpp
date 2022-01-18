@@ -74,9 +74,40 @@ class FPSButton : public BasicButton {
                     last_fps = current_fps;
                 }
             }
-            Button::draw();
+            BasicButton::draw();
         }
         int last_fps = -1;
+};
+
+class BenchmarkButton : public BasicButton {
+    public:
+        BenchmarkButton(Size s): BasicButton(s, "Benchmark") {}
+        void mouse_clicked(Point) {
+            Engine.map()->set_zoom(0.125);
+            start = true;
+            t_start = now();
+            cur_frames = 0;
+        }
+        void draw() {
+            if (start) {
+                cur_frames++;
+                if (cur_frames == max_frames) {
+                    int avg_fps = 1.0 / ((double)(now()-t_start) / (1000*1000*max_frames));
+                    std::string txt = "Result: " + std::to_string(avg_fps) + "fps";
+                    set_text(txt);
+                    print(txt);
+                } else if (cur_frames < max_frames) {
+                    Engine.map()->move_cam({10, 10});
+                } else {
+                    start = false;
+                }
+            }
+            BasicButton::draw();
+        }
+        bool start = false;
+        long long t_start = 0;
+        int max_frames = 500;
+        int cur_frames = 0;
 };
 
 class TestScriptButton : public BasicButton, public MessageBox::Listener {
@@ -155,7 +186,7 @@ void HUD::change_layout(const std::vector<std::pair<Composite*, Point>>& new_lay
 std::vector<std::pair<Composite*, Point>> HUD::create_standard_layout() {
     std::vector<std::pair<Composite*, Point>> ret;
     Size s(0.8 * size.w, 0.06 * size.h);
-    std::vector<Button*> buttons = {new BuildingsButton(this, s), new ResearchButton(this, s), new EventButton(this, s), new TownsButton(this, s), new SimulateButton(s), new NewButton(s), new SaveButton(s), new LoadButton(s), new TestScriptButton(s), new FPSButton(s)};
+    std::vector<Button*> buttons = {new BuildingsButton(this, s), new ResearchButton(this, s), new EventButton(this, s), new TownsButton(this, s), new SimulateButton(s), new NewButton(s), new SaveButton(s), new LoadButton(s), new TestScriptButton(s), new BenchmarkButton(s)};
     for (int i = 0; i < (int)buttons.size(); i++) {
         ret.push_back({buttons[i], {0.1 * size.w, (i+0.1) * 0.06 * size.h}});
     }

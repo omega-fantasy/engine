@@ -204,7 +204,7 @@ class Matrix : public MatrixBase {
         ~Matrix() { delete[] mem; }
         T* begin() const { return (T*)mem; }
         T* end() const { return (T*)mem + w * h; }
-        T& get(short x, short y) { return *((T*)mem + y * w + x); }
+        inline T& get(short x, short y) { return *((T*)mem + y * w + x); }
         int width() { return w; }
         int height() { return h; }
 };
