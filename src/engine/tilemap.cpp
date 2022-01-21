@@ -60,7 +60,7 @@ Point Tilemap::texture_root(Point p) {
             for (short x = p.x; x > p.x - s.w && x >= 0 ; x--) {
                 Texture::ID current_id = tiles_above->get(x, y);
                 if (current_id == -id) {
-                    return {x, y};
+                    return WrappingPoint(x, y, map_size);
                 }
             }
         }
@@ -167,25 +167,63 @@ void Tilemap::draw() {
         Box visible = visible_tiles();
         BigPoint cam_ref(pos.x - camera_pos.x, pos.y - camera_pos.y);
         Size tile_size(tile_dim.w * zoom, tile_dim.h * zoom);
-        parallel_for(visible.a.y, visible.b.y, [&](int y) {
+        Size screen_size = Engine.screen()->get_size();
+        unsigned* screen = (unsigned*)Engine.screen()->pixels;
+
+        parallel_for(visible.a.y, visible.b.y, [=](int y) {
             for (short x = visible.a.x; x <= visible.b.x; x++) {
+                Point start(cam_ref.x + x * tile_size.w, cam_ref.y + y * tile_size.h);
+                Point texture_end(start.x + tile_size.w, start.y + tile_size.h);
+                Point texture_start(0, 0);
+                Point texture_endcut(0, 0);
+                if (start.x < canvas.a.x) {
+                    texture_start.x = (canvas.a.x - start.x);
+                    start.x = canvas.a.x;
+                } else if (texture_end.x > canvas.b.x) {
+                    texture_endcut.x = texture_end.x - canvas.b.x;
+                }
+                if (start.y < canvas.a.y) {
+                    texture_start.y = (canvas.a.y - start.y);
+                    start.y = canvas.a.y;
+                } else if (texture_end.y > canvas.b.y) {
+                    texture_endcut.y = texture_end.y - canvas.b.y;
+                }
+                short upper_bound_x = tile_size.w - texture_start.x - texture_endcut.x;
+                short upper_bound_y = tile_size.h - texture_start.y - texture_endcut.y;
+                if (upper_bound_x <= 0 || upper_bound_y <= 0) continue;
+    
                 WrappingPoint p(x, y, map_size);
                 Texture::ID id = tiles_ground->get(p.x, p.y);
-                Texture* t = Engine.textures()->get(id < 0 ? -id : id);
-                Engine.screen()->blit(t->pixels(zoom), t->size(zoom), {cam_ref.x + x * tile_size.w, cam_ref.y + y * tile_size.h}, canvas, false);
-            }
-        }
-        );
-        for (short y = visible.a.y; y <= visible.b.y; y++) {
-            for (short x = visible.a.x; x <= visible.b.x; x++) {
-                WrappingPoint p(x, y, map_size);
-                Texture::ID id = tiles_above->get(p.x, p.y);
-                if (id > 0) {
+                unsigned* texture_pixels = (unsigned*)(Engine.textures()->get(id < 0 ? -id : id)->pixels(zoom) + texture_start.y * tile_size.w + texture_start.x); 
+                unsigned* screen_pixels = (unsigned*)(screen + start.y * screen_size.w + start.x);
+                for (short y = 0; y < upper_bound_y; y++) {
+                    std::memcpy(screen_pixels + y * screen_size.w, texture_pixels + y * tile_size.w, upper_bound_x * sizeof(unsigned));
+                }
+                
+                id = tiles_above->get(p.x, p.y);
+                if (id != 0) {
+                    Point p_root = p;
+                    if (id < 0) {
+                        p_root = texture_root(p);
+                        id = tiles_above->get(p_root.x, p_root.y);
+                    }
                     Texture* t = Engine.textures()->get(id);
-                    Engine.screen()->blit(t->pixels(zoom), t->size(zoom), {cam_ref.x + x * tile_size.w, cam_ref.y + y * tile_size.h}, canvas, true);
+                    Color* texture = t->pixels(zoom);
+                    Size texture_size = t->size(zoom);
+                    texture_pixels = (unsigned*)(texture + texture_start.y * texture_size.w + texture_start.x + tile_size.h * texture_size.w * (p.y - p_root.y) + tile_size.w * (p.x - p_root.x)); 
+                    for (short y = 0; y < upper_bound_y; y++) {
+                        for (short x = 0; x < upper_bound_x; x++) {
+                            unsigned color1 = screen_pixels[y * screen_size.w + x];
+                            unsigned color2 = texture_pixels[y * texture_size.w + x];
+                            unsigned rb = (color1 & 0xff00ff) + (((color2 & 0xff00ff) - (color1 & 0xff00ff)) * ((color2 & 0xff000000) >> 24) >> 8);
+                            unsigned g  = (color1 & 0x00ff00) + (((color2 & 0x00ff00) - (color1 & 0x00ff00)) * ((color2 & 0xff000000) >> 24) >> 8);
+                            screen_pixels[y * screen_size.w + x] = (rb & 0xff00ff) | (g & 0x00ff00);
+                        }
+                    }
                 }
             }
-        }
+        });
+
         if (t_cursor && canvas.inside(mpos)) { // snap to tile
             BigPoint mouse_abs = camera_pos + mpos - pos;
             Point tile_abs = { mouse_abs.x / (tile_dim.w * zoom), mouse_abs.y / (tile_dim.h * zoom) };

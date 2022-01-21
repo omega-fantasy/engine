@@ -111,8 +111,6 @@ class Screen : public Composite {
         
         void update() {
             long long t = now() - last_update;
-            long long delta = 16660 - t;
-            if (delta > 0) { wait(delta); }
             update_window();
             m_fps = t > 0 ? (double) 1 / ((double)t / (1000 * 1000)) : 0; 
             last_update = now();

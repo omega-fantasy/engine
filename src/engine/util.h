@@ -105,9 +105,9 @@ struct Color {
 struct WrappingPoint : public Point {
     WrappingPoint(short a, short b, Size max_size): Point(a, b) {
         if (x < 0) x += ((-x / max_size.w) + 1) * max_size.w;
+        else if (x >= max_size.w) x %= max_size.w;
         if (y < 0) y += ((-y / max_size.h) + 1) * max_size.h;
-        if (x >= max_size.w) x %= max_size.w;
-        if (y >= max_size.h) y %= max_size.h;
+        else if (y >= max_size.h) y %= max_size.h;
     }
 };
 
