@@ -43,18 +43,19 @@ class Script {
 
     class Context {
         public:
-        Context(const std::string name, std::map<std::string, std::pair<Function, std::vector<Type>>>& f): outfile(name, std::ios::app), functions(f) {}
+        Context(const std::string name, std::map<std::string, std::pair<Function, std::vector<Type>>>& f): outfile(file_open(name)), functions(f) {}
         ~Context() {
             for (auto& v : variables) {
                 if (std::holds_alternative<std::vector<double>*>(v.second)) {
                     delete dl(v.second);
                 }
             }
+            file_close(outfile);
         }
 
-        void output(const std::string s) {
+        void output(const std::string& s) {
             print(s);
-            outfile << s << std::endl;
+            file_writeline(outfile, s);
             current_outputs += s + "\n";
         }
 
@@ -83,10 +84,11 @@ class Script {
 
         void execute(const std::string& filepath) {
             std::vector<std::pair<std::string, int>> stack;
-            std::ifstream stream = std::ifstream(filepath);
+            FileHandle file = file_open(filepath);
             std::vector<std::vector<std::string>> lines = {{"script start"}};
             int l = 1;
-            for (std::string line; std::getline(stream, line);) {
+            while (!file_isend(file)) {
+                std::string line = file_readline(file);
                 replace(line, "(", "( ");
                 replace(line, ")", " )");
                 bool in_string = false;
@@ -117,6 +119,7 @@ class Script {
                 }
                 l++;
             }
+            file_close(file);
             if (!stack.empty()) {
                 panic("could not match " + stack[0].first + " on line " + std::to_string(stack[1].second) + " with its end");
             }
@@ -217,7 +220,7 @@ class Script {
         
         int current_line = 1;
         std::map<std::string, Value> variables;
-        std::ofstream outfile;
+        FileHandle outfile;
         std::map<std::string, std::pair<Function, std::vector<Type>>>& functions;
         std::map<int, int> loops;
         std::map<int, int> end_to_loop;

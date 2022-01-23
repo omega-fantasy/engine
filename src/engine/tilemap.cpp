@@ -60,7 +60,7 @@ Point Tilemap::texture_root(Point p) {
             for (short x = p.x; x > p.x - s.w && x >= 0 ; x--) {
                 Texture::ID current_id = tiles_above->get(x, y);
                 if (current_id == -id) {
-                    return WrappingPoint(x, y, map_size);
+                    return {x, y, map_size};
                 }
             }
         }
@@ -93,7 +93,7 @@ void Tilemap::move_cam(Point p) {
 void Tilemap::move_cam_to_tile(Point tile_pos) {
     camera_pos = {tile_pos.x * tile_dim.w * zoom, tile_pos.y * tile_dim.h * zoom};
     Box visible = visible_tiles();
-    BigPoint mid = {zoom * tile_dim.w * (visible.b.x - visible.a.x) / 2, zoom * tile_dim.h * (visible.b.y - visible.a.y) / 2};
+    Camera mid = {zoom * tile_dim.w * (visible.b.x - visible.a.x) / 2, zoom * tile_dim.h * (visible.b.y - visible.a.y) / 2};
     camera_pos = camera_pos - mid;
     fix_camera();
 }
@@ -130,15 +130,15 @@ void Tilemap::randomize_map() {
 }
 
 void Tilemap::mouse_clicked(Point p) {
-    BigPoint click_pos = camera_pos + p - pos;
-    WrappingPoint click_tile(click_pos.x / (tile_dim.w * zoom), click_pos.y / (tile_dim.h * zoom), map_size);
+    Camera click_pos = camera_pos + p - pos;
+    Point click_tile(click_pos.x / (tile_dim.w * zoom), click_pos.y / (tile_dim.h * zoom), map_size);
     for (auto& l : click_listeners) {
         l->tile_clicked(click_tile);
     }
 }
 
 void Tilemap::fix_camera() {
-    BigPoint camera_max = {(zoom * tile_dim.w) * map_size.w - size.w, (zoom * tile_dim.h) * map_size.h - size.h};
+    Camera camera_max = {(zoom * tile_dim.w) * map_size.w - size.w, (zoom * tile_dim.h) * map_size.h - size.h};
     if (infinite_scrolling) {
         if (camera_pos.x < -camera_max.x) camera_pos.x += (camera_max.x + size.w);
         if (camera_pos.y < -camera_max.y) camera_pos.y += (camera_max.y + size.h);
@@ -165,7 +165,7 @@ void Tilemap::draw() {
 
     if (needs_update() || do_update) {
         Box visible = visible_tiles();
-        BigPoint cam_ref(pos.x - camera_pos.x, pos.y - camera_pos.y);
+        Camera cam_ref(pos.x - camera_pos.x, pos.y - camera_pos.y);
         Size tile_size(tile_dim.w * zoom, tile_dim.h * zoom);
         Size screen_size = Engine.screen()->get_size();
         unsigned* screen = (unsigned*)Engine.screen()->pixels;
@@ -192,7 +192,7 @@ void Tilemap::draw() {
                 short upper_bound_y = tile_size.h - texture_start.y - texture_endcut.y;
                 if (upper_bound_x <= 0 || upper_bound_y <= 0) continue;
     
-                WrappingPoint p(x, y, map_size);
+                Point p(x, y, map_size);
                 Texture::ID id = tiles_ground->get(p.x, p.y);
                 unsigned* texture_pixels = (unsigned*)(Engine.textures()->get(id < 0 ? -id : id)->pixels(zoom) + texture_start.y * tile_size.w + texture_start.x); 
                 unsigned* screen_pixels = (unsigned*)(screen + start.y * screen_size.w + start.x);
@@ -225,7 +225,7 @@ void Tilemap::draw() {
         });
 
         if (t_cursor && canvas.inside(mpos)) { // snap to tile
-            BigPoint mouse_abs = camera_pos + mpos - pos;
+            Camera mouse_abs = camera_pos + mpos - pos;
             Point tile_abs = { mouse_abs.x / (tile_dim.w * zoom), mouse_abs.y / (tile_dim.h * zoom) };
             mouse_abs = { tile_abs.x * (tile_dim.w * zoom), tile_abs.y * (tile_dim.h * zoom) };
             tile_abs = { mouse_abs.x - camera_pos.x + pos.x, mouse_abs.y - camera_pos.y + pos.y };

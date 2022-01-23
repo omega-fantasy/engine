@@ -45,7 +45,7 @@ class MiniMap : public Composite, Input::Listener, Tilemap::Listener {
                 Engine.screen()->blit(m_texture->pixels(), m_texture->size(), pos, Box(pos, size), false);
                 Size tiles_per_pixel = Engine.map()->tilemap_size() / size;
                 Box corners = Engine.map()->visible_tiles();
-                WrappingPoint tile_center(corners.center().x, corners.center().y, Engine.map()->tilemap_size());
+                Point tile_center(corners.center().x, corners.center().y, Engine.map()->tilemap_size());
                 Point mini_cam_pos = pos + Point(tile_center.x / tiles_per_pixel.w, tile_center.y / tiles_per_pixel.h);
                 Engine.screen()->blit(texture_cam->pixels(), texture_cam->size(), mini_cam_pos, Box(pos, size), true);
                 /* disabled drawing box on mini-map due to complex edge-wrapping

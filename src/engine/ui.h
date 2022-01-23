@@ -5,7 +5,6 @@
 #include "screen.h"
 #include "texture.h"
 #include "input.h"
-#include <cctype>
 
 class ProgressBar : public Composite {
     public:

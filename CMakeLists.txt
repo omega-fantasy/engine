@@ -11,7 +11,7 @@ target_link_options(engine PRIVATE -fuse-ld=gold -lSDL2 -lpthread
     #-fsanitize=address,undefined,implicit-conversion
     #-fsanitize=thread
 )
-target_compile_options(engine PRIVATE -g3 -fno-omit-frame-pointer -march=native -O2 -std=c++17 -fno-exceptions -fno-rtti -Wpedantic -Wall -Wextra
+target_compile_options(engine PRIVATE -g3 -fno-omit-frame-pointer -O2 -std=c++17 -fno-exceptions -fno-rtti -Wpedantic -Wall -Wextra -Wno-missing-field-initializers
     #-fsanitize=address,undefined,implicit-conversion
     #-fsanitize=thread
 )

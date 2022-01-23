@@ -164,6 +164,7 @@ static Texture* generate_plant(Size s, Color color_crown, Color color_trunk, dou
     return new Texture(s, img);
 }
 
+/*
 static Texture* generate_debris(Size s, Color, Color, Color, int size_clusters, int num_clusters) {
     Color* img = new Color[s.w * s.h];
     for (int i = 0; i < num_clusters; i++) {
@@ -173,7 +174,7 @@ static Texture* generate_debris(Size s, Color, Color, Color, int size_clusters, 
 
     return new Texture(s, img);
 }
-
+*/
 
 
 

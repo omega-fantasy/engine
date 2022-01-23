@@ -3,7 +3,6 @@
 
 #include <cmath>
 #include <cstring>
-#include <cassert>
 #include <string>
 #include <vector>
 #include <variant>
@@ -11,19 +10,31 @@
 #include <algorithm>
 #include <map>
 #include <set>
-#include <fstream>
 #include <functional>
 
 // Utility data structures
 
+struct Size {
+    short w;
+    short h;
+    Size(): w(0), h(0) {}
+    Size(short a, short b): w(a), h(b) {} 
+    Size(int a, int b): w(a), h(b) {} 
+    Size(double a, double b): w(a), h(b) {} 
+    Size operator*(const Size& s) { return Size(w * s.w, h * s.h); }
+    Size operator*(const float d) { return Size(d * w, d * h); }
+    Size operator/(const Size& s) { return Size(w / s.w, h / s.h); }
+};
+
 struct Point {
+    short x;
+    short y;
     Point(): x(0), y(0) {}
     Point(short a, short b): x(a), y(b) {} 
+    Point(short a, short b, Size max_size): x(a), y(b) { wrap(max_size); }
     Point(int a, int b): x(a), y(b) {} 
     Point(int pos) { x = pos & 0x0000FFFF; y = (pos & 0xFFFF0000) >> 16; } 
     Point(double a, double b): x(a), y(b) {} 
-    short x;
-    short y;
     Point operator+(const Point& p) { return Point(x + p.x, y + p.y); }
     Point operator-(const Point& p) { return Point(x - p.x, y - p.y); }
     Point operator*(Point& p) { return Point(x * p.x, y * p.y); }
@@ -32,34 +43,12 @@ struct Point {
     bool operator!=(Point& p) { return x != p.x || y != p.y; }
     short distance(const Point& p) { return std::abs(x - p.x) + std::abs(y - p.y); }
     operator int() { return *((int*)this); }
-};
-
-struct BigPoint {
-    BigPoint(short a, short b): x(a), y(b) {} 
-    BigPoint(int a, int b): x(a), y(b) {} 
-    BigPoint(double a, double b): x(a), y(b) {} 
-    int x;
-    int y;
-    BigPoint operator+(const BigPoint& p) { return BigPoint(x + p.x, y + p.y); }
-    BigPoint operator+(const Point& p) { return BigPoint(x + p.x, y + p.y); }
-    BigPoint operator-(const BigPoint& p) { return BigPoint(x - p.x, y - p.y); }
-    BigPoint operator-(const Point& p) { return BigPoint(x - p.x, y - p.y); }
-    BigPoint operator*(BigPoint& p) { return BigPoint(x * p.x, y * p.y); }
-    BigPoint operator/(BigPoint& p) { return BigPoint(x / p.x, y / p.y); }
-    bool operator==(const BigPoint& p) { return x == p.x && y == p.y; }
-    short distance(const BigPoint& p) { return std::abs(x - p.x) + std::abs(y - p.y); }
-};
-
-struct Size {
-    Size(): w(0), h(0) {}
-    Size(short a, short b): w(a), h(b) {} 
-    Size(int a, int b): w(a), h(b) {} 
-    Size(double a, double b): w(a), h(b) {} 
-    short w;
-    short h;
-    Size operator*(const Size& s) { return Size(w * s.w, h * s.h); }
-    Size operator*(const float d) { return Size(d * w, d * h); }
-    Size operator/(const Size& s) { return Size(w / s.w, h / s.h); }
+    void wrap(Size max_size) {
+        if (x < 0) x += ((-x / max_size.w) + 1) * max_size.w;
+        else if (x >= max_size.w) x %= max_size.w;
+        if (y < 0) y += ((-y / max_size.h) + 1) * max_size.h;
+        else if (y >= max_size.h) y %= max_size.h;
+    }
 };
 
 struct Box {
@@ -75,7 +64,6 @@ struct Box {
 
 struct Color {
     Color(const Color& c) { *((unsigned*)this) = unsigned(c); };
-
     Color() {}
     Color(unsigned char r, unsigned char g, unsigned char b, unsigned char a=255): blue(b), green(g), red(r), alpha(a) {}
     Color(unsigned u) { *this = u; }
@@ -87,32 +75,13 @@ struct Color {
     Color& operator=(Color c) { *((unsigned*)this) = unsigned(c); return *this; } 
     operator int() { return *((int*)this); }
     operator unsigned() const { return *((unsigned*)this); }
-    unsigned char& operator[](int i) {
-        switch (i) {
-            case 0: return blue;
-            case 1: return green;
-            case 2: return red;
-            case 3: return alpha;
-            default: return red;
-        }
-    }
     unsigned char blue = 0;
     unsigned char green = 0;
     unsigned char red = 0;
     unsigned char alpha = 0;
 };
 
-struct WrappingPoint : public Point {
-    WrappingPoint(short a, short b, Size max_size): Point(a, b) {
-        if (x < 0) x += ((-x / max_size.w) + 1) * max_size.w;
-        else if (x >= max_size.w) x %= max_size.w;
-        if (y < 0) y += ((-y / max_size.h) + 1) * max_size.h;
-        else if (y >= max_size.h) y %= max_size.h;
-    }
-};
-
-struct StringBase{};
-template<int N> struct String : StringBase {
+template<int N> struct String {
     String() {}
     String(const char* c) { strcpy(mem, c); }
     String(const std::string& c) { strncpy(mem, c.c_str(), c.size()); }
@@ -137,6 +106,16 @@ using String32 = String<32>;
 
 std::pair<Color*, Size> load_bmp(const std::string& filepath);
 std::vector<std::pair<Color*, Size>> load_letters(const std::string& fontpath, int height, Color color, char start, char end);
+
+using FileHandle = void*;
+FileHandle file_open(const std::string& path);
+void file_close(FileHandle file);
+void file_read(FileHandle file, char* buffer, int num_bytes);
+void file_write(FileHandle file, char* buffer, int num_bytes);
+std::string file_readline(FileHandle file);
+void file_writeline(FileHandle file, const std::string& s);
+bool file_isend(FileHandle file);
+bool file_exists(const std::string& path);
 
 std::vector<std::string> filelist(const std::string& path, const std::string& filter = "");
 std::string filename(const std::string& filepath);

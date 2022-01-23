@@ -152,8 +152,7 @@ class LoadButton : public BasicButton {
     public:
         LoadButton(Size s): BasicButton(s, "Load Game") {}
         void mouse_clicked(Point) { 
-            std::ifstream ifile("state.sav");
-            if (ifile) {
+            if (file_exists("state.sav")) {
                 Engine.load_state("state.sav");
                 Engine.audio()->play_sound("menu2");
             }

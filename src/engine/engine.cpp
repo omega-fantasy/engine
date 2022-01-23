@@ -59,11 +59,11 @@ void Composite::set_overlay(Color color, int num_frames, Listener* listener) {
     Color old_color;
     old_color = static_cast<unsigned>(m_overlay->pixels()[0]); 
     for (int i = num_frames; i > 0; i--) {
-        Color new_color;
-        for (int j = 0; j < 4; j++) {
-            new_color[j] = old_color[j];
-            new_color[j] += ((double)i / num_frames) * (target_color[j] - old_color[j]);
-        }
+        Color new_color = old_color;
+        new_color.red += ((double)i / num_frames) * (target_color.red - old_color.red);
+        new_color.green += ((double)i / num_frames) * (target_color.green - old_color.green);
+        new_color.blue += ((double)i / num_frames) * (target_color.blue - old_color.blue);
+        new_color.alpha += ((double)i / num_frames) * (target_color.alpha - old_color.alpha);
         overlay_colors.push_back(new_color);
     }
 }

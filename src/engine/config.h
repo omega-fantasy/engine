@@ -20,36 +20,42 @@ class ConfigParser {
         operator std::vector<Node>() const { return std::get<2>(val); }
         bool contains(const std::string& s) { return std::get<1>(val).find(s) != std::get<1>(val).end(); }
 
-        Node() { assert(false); }
-        Node(std::ifstream& stream) {
-            std::string word;
-            stream >> word;
+        Node() { }
+        Node(std::vector<std::string>& stream) {
+            std::string word = stream.back();
+            stream.pop_back();
             if (word == "{") {
-                //std::cout << "Parsing map: " << std::endl;
+                //print("Parsing map:");
                 val = std::map<std::string, Node>();
                 while (1) {
-                    std::string key;
-                    stream >> key;
+                    std::string key = stream.back();
+                    stream.pop_back();
+                    if (key == " " || key.empty()) continue;
                     if (key == "}") break;
-                    stream >> word; // seperator
-                    //std::cout << "Parsing key: " << key << std::endl;
+                    word = stream.back(); // seperator
+                    stream.pop_back();
+                    //print("Parsing key: " + key);
                     std::get<1>(val).emplace(key, stream);
                 }
-                //std::cout << "End map" << std::endl;
+                //print("End map");
             } else if (word == "[") {
-                //std::cout << "Parsing list: " << std::endl;
+                //print("Parsing list: ");
                 val = std::vector<Node>();
                 auto& vec = std::get<2>(val);
                 while (1) {
+                    if (stream.back() == " " || stream.back().empty()) {
+                        stream.pop_back();
+                        continue;
+                    }
                     vec.emplace_back(stream);
                     if (std::get_if<0>(&vec.back().val) && vec.back().str() == "]") {
                         vec.pop_back();
                         break;
                     }
                 }
-                //std::cout << "End list" << std::endl;
+                //print("End list");
             } else {
-                //std::cout << "Parsing element: " << word << std::endl;
+                //print("Parsing element: " + word );
                 val = std::string();
                 std::replace(word.begin(), word.end(), '$', ' ');
                 std::get<0>(val) = word;
@@ -64,8 +70,15 @@ class ConfigParser {
         
     void add_folder(const std::string& folder) {
         for (auto& filepath : filelist(folder, ".config")) {
-            std::ifstream f(filepath);
-            files.emplace(filename(filepath), f);
+            std::vector<std::string> tokens;
+            FileHandle file = file_open(filepath);
+            while (!file_isend(file)) {
+                std::vector<std::string> line = split(file_readline(file), ' ');
+                tokens.insert(tokens.end(), line.begin(), line.end());
+            }
+            file_close(file);
+            std::reverse(tokens.begin(), tokens.end());
+            files.emplace(filename(filepath), tokens);
         }
     }
 

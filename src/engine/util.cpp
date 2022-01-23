@@ -1,6 +1,5 @@
 #include "util.h"
 
-#include <iostream>
 #include <cstdlib>
 #include "extern/SDL2/SDL.h"
 
@@ -60,6 +59,40 @@ std::vector<std::pair<Color*, Size>> load_letters(const std::string& fontpath, i
 
 
 
+FileHandle file_open(const std::string& path) {
+    fclose(fopen(path.c_str(), "a"));
+    return (FileHandle)fopen(path.c_str(), "rb+");
+}
+
+void file_close(FileHandle file) { fclose((FILE*)file); }
+
+void file_read(FileHandle file, char* buffer, int num_bytes) { fread(buffer, num_bytes, 1, (FILE*)file); }
+
+void file_write(FileHandle file, char* buffer, int num_bytes) { fwrite(buffer, num_bytes, 1, (FILE*)file); }
+
+std::string file_readline(FileHandle file) {
+    static char buffer[4096];
+    fgets(buffer, 4096, (FILE*)file);
+    std::string ret = std::string(buffer);
+    return ret.substr(0, ret.size() - 1);
+}
+
+void file_writeline(FileHandle file, const std::string& s) {
+    std::string w = s + "\n";
+    fwrite(w.c_str(), w.size(), 1, (FILE*)file);
+}
+
+bool file_isend(FileHandle file) { return feof((FILE*)file); }
+
+bool file_exists(const std::string& path) {
+    FILE* file = fopen(path.c_str(), "r");
+    if (file) {
+        fclose(file);
+    }
+    return file != nullptr;
+}
+
+
 #include <filesystem>
 std::vector<std::string> filelist(const std::string& path, const std::string& filter) {
     std::vector<std::string> ret;
@@ -102,7 +135,7 @@ std::vector<std::string> split(const std::string &s, char delim) {
 }
 
 void replace(std::string& s, const std::string& from, const std::string& to) {
-    if(from.empty()) {
+    if (from.empty()) {
         return;
     }
     size_t start_pos = 0;
@@ -122,7 +155,7 @@ double to_double(const std::string& s) {
     return d;
 }
 
-void print(const std::string& s) { std::cout << s << std::endl; }
+void print(const std::string& s) { puts(s.c_str()); }
 
 
 
@@ -320,7 +353,6 @@ void decompress(void* in_data, int in_len, void* out_data, int out_len) {
 #include <deque>
 #include <thread>
 #include <mutex>
-#include <atomic>
 #include <condition_variable>
 
 class ThreadPool {

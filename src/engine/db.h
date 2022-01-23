@@ -6,8 +6,7 @@
 class CompressedFile {
     public:
     CompressedFile(const std::string filename, bool write): write_mode(write) {
-        std::ios_base::openmode mode = write ? std::ios::out : std::ios::in;
-        file = std::fstream(filename, mode | std::ios::binary);
+        file = file_open(filename);
         if (!write) {
             read_block();
         }
@@ -17,6 +16,7 @@ class CompressedFile {
         if (write_mode && buffer_pos > 0) {
             write_block();
         }
+        file_close(file);
     }
 
     void write(const char* s, int n) {
@@ -39,14 +39,14 @@ class CompressedFile {
 
     void write_block() {
         compress(buffer, BLOCK_SIZE, comp_buffer, comp_block_size);
-        file.write((char*)(&comp_block_size), sizeof(comp_block_size));
-        file.write(comp_buffer, comp_block_size);
+        file_write(file, (char*)(&comp_block_size), sizeof(comp_block_size));
+        file_write(file, comp_buffer, comp_block_size);
         buffer_pos = 0;
     }
 
     void read_block() {
-        file.read((char*)(&comp_block_size), sizeof(comp_block_size));
-        file.read(comp_buffer, comp_block_size);
+        file_read(file, (char*)(&comp_block_size), sizeof(comp_block_size));
+        file_read(file, comp_buffer, comp_block_size);
         decompress(comp_buffer, comp_block_size, buffer, 2 * BLOCK_SIZE);
         buffer_pos = 0;
     }
@@ -54,7 +54,7 @@ class CompressedFile {
     int comp_block_size = 0;
     bool write_mode;
     static constexpr int BLOCK_SIZE = 32000;
-    std::fstream file;
+    FileHandle file;
     int buffer_pos = 0;
     char buffer[2 * BLOCK_SIZE];
     char comp_buffer[2 * BLOCK_SIZE];

@@ -35,7 +35,6 @@ class Tilemap : public Composite, Input::Listener {
         Size tile_size() { return tile_dim; }
         float camera_zoom() { return zoom; }
         void set_zoom(float z) { zoom = z; }
-        BigPoint camera_position() { return camera_pos; }
         void add_listener(Tilemap::Listener* l) { click_listeners.push_back(l); }
         void remove_listener(Tilemap::Listener* l) { click_listeners.erase(std::find(click_listeners.begin(), click_listeners.end(), l)); } 
         Texture::ID get_ground(Point p) { Texture::ID id = tiles_ground->get(p.x, p.y); return id < 0 ? -id : id; }
@@ -49,7 +48,19 @@ class Tilemap : public Composite, Input::Listener {
         Matrix<Texture::ID>* tiles_above = nullptr;
         Size tile_dim = {0, 0};
         Size map_size = {0, 0};
-        BigPoint camera_pos = {0, 0};
+        struct Camera {
+            Camera(int a, int b): x(a), y(b) {}
+            Camera(double a, double b): x(a), y(b) {}
+            int x;
+            int y;
+            Camera operator+(const Point& p) { return Camera(x + p.x, y + p.y); }
+            Camera operator-(const Point& p) { return Camera(x - p.x, y - p.y); }
+            Camera operator+(const Camera& p) { return Camera(x - p.x, y - p.y); }
+            Camera operator-(const Camera& p) { return Camera(x - p.x, y - p.y); }
+        };
+        Camera camera_pos = {0, 0};
+        int camera_pos_x = 0;
+        int camera_pos_y = 0;
         float zoom = 1;
         std::string cursor_texture;
         Point last_mouse_pos = {0, 0};
