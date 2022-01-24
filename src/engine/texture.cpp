@@ -273,10 +273,11 @@ Texture* TextureManager::get(char letter, int size) {
     return letter_to_texture[size][letter]; 
 }
 
+static const std::string EMPTY_PARAM = "EMPTY_PARAM";
 std::string TextureManager::generate_name(const std::string& command, const std::vector<std::string>& params) {
     std::string ret = command; 
     for (auto& p : params) {
-        ret += DELIMITER + p;
+        ret += p.empty() ? DELIMITER + EMPTY_PARAM : DELIMITER + p;
     }
     return ret;
 }
@@ -308,7 +309,7 @@ Texture* TextureManager::get_blended(const std::string& base, const std::string&
     int depth = 0.125 * s.w;
     int max_depth = 0.2 * s.w;
     Color* target = (Color*)gen_texture->pixels();
-    if (!left.empty()) {
+    if (!left.empty() && left != EMPTY_PARAM) {
         Color* src = (Color*)name_to_texture[left]->pixels();
         for (int y = 0; y < s.h; y++) {
             for (int x = 0; x < depth; x++) {
@@ -319,7 +320,7 @@ Texture* TextureManager::get_blended(const std::string& base, const std::string&
             if (depth > max_depth) depth = max_depth;
         }
     }
-    if (!right.empty()) {
+    if (!right.empty() && right != EMPTY_PARAM) {
         Color* src = (Color*)name_to_texture[right]->pixels();
         for (int y = 0; y < s.h; y++) {
             for (int x = s.w-1-depth; x < s.w; x++) {
@@ -330,7 +331,7 @@ Texture* TextureManager::get_blended(const std::string& base, const std::string&
             if (depth > max_depth) depth = max_depth;
         }
     }
-    if (!top.empty()) {
+    if (!top.empty() && top != EMPTY_PARAM) {
         Color* src = (Color*)name_to_texture[top]->pixels();
         for (int x = 0; x < s.w; x++) {
             for (int y = 0; y < depth; y++) {
@@ -341,7 +342,7 @@ Texture* TextureManager::get_blended(const std::string& base, const std::string&
             if (depth > max_depth) depth = max_depth;
         }
     }
-    if (!bottom.empty()) {
+    if (!bottom.empty() && bottom != EMPTY_PARAM) {
         Color* src = (Color*)name_to_texture[bottom]->pixels();
         for (int x = 0; x < s.w; x++) {
             for (int y = s.h-1-depth; y < s.h; y++) {

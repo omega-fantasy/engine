@@ -118,15 +118,17 @@ std::string filename(const std::string& filepath) {
     return f;
 }
 
-#include <sstream>
 std::vector<std::string> split(const std::string &s, char delim) {
     std::vector<std::string> result;
-    std::stringstream ss(s);
-    std::string item;
-    while (std::getline(ss, item, delim)) {
+    std::string cpy(s);
+    std::string d(1, delim);
+    char* pch = strtok ((char*)cpy.c_str(), d.c_str());
+    while (pch) {
+        std::string item(pch);
         if (delim != ' ' || !item.empty()) {
             result.push_back(item);
         }
+        pch = strtok(nullptr, d.c_str());
     }
     if (s.empty() || s.back() == delim) {
         result.emplace_back();
@@ -233,7 +235,7 @@ struct AudioFile {
     bool loop;
 };
 
-static std::set<AudioFile*> queued_audio;
+static std::vector<AudioFile*> queued_audio;
 static SDL_AudioFormat audio_format = AUDIO_S16LSB;
 static SDL_AudioDeviceID dev;   
 
@@ -249,7 +251,7 @@ void audio_callback(void*, Uint8 *stream, int len) {
         } 
     }
     for (auto& audio : remove) {
-        queued_audio.erase(audio);
+        queued_audio.erase(std::remove(queued_audio.begin(), queued_audio.end(), audio), queued_audio.end());
     }
 }
 
@@ -278,9 +280,9 @@ void play_wav(AudioHandle audio, bool) {
     if (!handle) {
         return;
     }
-    if (!handle->length_remaining && queued_audio.find(handle) == queued_audio.end()) {
+    if (!handle->length_remaining && std::find(queued_audio.begin(), queued_audio.end(), handle) == queued_audio.end()) {
         handle->length_remaining = handle->length;
-        queued_audio.insert(handle);
+        queued_audio.push_back(handle);
     }
 }
 
@@ -350,7 +352,6 @@ void decompress(void* in_data, int in_len, void* out_data, int out_len) {
 
 
 
-#include <deque>
 #include <thread>
 #include <mutex>
 #include <condition_variable>
@@ -363,17 +364,12 @@ class ThreadPool {
                 while (true) {
                     std::unique_lock<std::mutex> latch(m_queue_mutex);
                     cv_task.wait(latch, [this](){ return stop || !m_workQueue.empty(); });
-                    if (!m_workQueue.empty())
-                    {
+                    if (!m_workQueue.empty()) {
                         ++busy;
-
                         auto fn = m_workQueue.front();
-                        m_workQueue.pop_front();
-
+                        m_workQueue.erase(m_workQueue.begin());
                         latch.unlock();
-
                         fn();
-
                         latch.lock();
                         --busy;
                         cv_finished.notify_one();
@@ -409,7 +405,7 @@ class ThreadPool {
 
 private:
     std::vector<std::thread> m_threads;
-    std::deque<std::function<void(void)>> m_workQueue;
+    std::vector<std::function<void(void)>> m_workQueue;
     std::mutex m_queue_mutex;
     std::condition_variable cv_task;
     std::condition_variable cv_finished;

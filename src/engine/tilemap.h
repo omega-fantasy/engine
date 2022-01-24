@@ -59,8 +59,6 @@ class Tilemap : public Composite, Input::Listener {
             Camera operator-(const Camera& p) { return Camera(x - p.x, y - p.y); }
         };
         Camera camera_pos = {0, 0};
-        int camera_pos_x = 0;
-        int camera_pos_y = 0;
         float zoom = 1;
         std::string cursor_texture;
         Point last_mouse_pos = {0, 0};

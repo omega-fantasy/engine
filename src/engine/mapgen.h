@@ -85,7 +85,7 @@ class MapGen {
 
         static void post_process(Config& config, Size map_size) {
             auto map = Engine.map();
-            std::map<Texture::ID, std::set<Texture::ID>> blend_map; 
+            std::map<Texture::ID, std::map<Texture::ID, int>> blend_map; 
             std::map<Texture::ID, std::string> name_map; 
             std::vector<Texture::ID> prev_ids;
             for (Config::Elevation& elevation : config.elevations) {
@@ -93,13 +93,13 @@ class MapGen {
                 for (auto& biome : elevation.biomes) {
                     if (elevation.blend) {
                         for (auto prev_id : prev_ids) {
-                            blend_map[biome.id()].insert(prev_id);
+                            blend_map[biome.id()][prev_id] = 1;
                         }
                         for (auto& biome2 : elevation.biomes) {
                             if (biome2.id() == biome.id()) {
                                 break;
                             }
-                            blend_map[biome.id()].insert(biome2.id());
+                            blend_map[biome.id()][biome2.id()] = 1;
                         }
                     }
                     name_map[biome.id()] = biome.name;
@@ -112,7 +112,7 @@ class MapGen {
                 for (short x_map = 0; x_map < map_size.w; x_map++) {
                     Texture::ID current_id = map->get_ground({x_map, y_map});
                     if (blend_map.find(current_id) != blend_map.end()) {
-                        std::set<Texture::ID>& blend_set = blend_map[current_id];
+                        auto& blend_set = blend_map[current_id];
                         bool blend = false;
                         if (y_map > 0 && blend_set.find(map->get_ground({x_map+0, y_map-1})) != blend_set.end()) {
                             params[1] = name_map[map->get_ground({x_map+0, y_map-1})]; blend = true;

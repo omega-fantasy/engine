@@ -26,8 +26,8 @@ class Input {
                 }
             }
         }
-        void add_move_listener(Input::Listener* l) { mouse_moves.insert(l); }
-        void remove_move_listener(Input::Listener* l) { mouse_moves.erase(mouse_moves.find(l)); };
+        void add_move_listener(Input::Listener* l) { mouse_moves.push_back(l); }
+        void remove_move_listener(Input::Listener* l) { mouse_moves.erase(std::remove(mouse_moves.begin(), mouse_moves.end(), l), mouse_moves.end()); };
         void add_mouse_listener(Input::Listener* l, Box b, bool temp = false) {
             if (temp) {
                 temp_clicks[l] = b;
@@ -44,7 +44,7 @@ class Input {
             std::vector<std::string> released;
             pressed_keys(pressed, released);
             for (auto& hold : held) {
-                pressed.push_back(hold);
+                pressed.push_back(hold.first);
             }
             for (auto& key : pressed) {
                 if (temp_presses.find(key) != temp_presses.end() && !clear_temps) {
@@ -52,7 +52,7 @@ class Input {
                 } else if (enabled && presses.find(key) != presses.end()) {
                     presses[key]->key_pressed(key);
                     if (key != "WheelUp" && key != "WheelDown") {
-                        held.insert(key);
+                        held[key] = 1;
                     }
                 } else if (key == "MouseLeft") {
                     Point p = mouse_pos();
@@ -95,8 +95,8 @@ class Input {
         }
 
     private:
-        std::set<std::string> held;
-        std::set<Input::Listener*> mouse_moves;
+        std::map<std::string, int> held;
+        std::vector<Input::Listener*> mouse_moves;
         std::map<std::string, Input::Listener*> temp_presses;
         std::map<std::string, Input::Listener*> presses;
         std::map<Input::Listener*, Box> temp_clicks;
