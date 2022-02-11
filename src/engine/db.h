@@ -178,8 +178,12 @@ class MatrixBase {
             file.read((char*)(&elem_size), sizeof(elem_size));
             mem = new char[w * h * elem_size]; 
             file.read(mem, w * h * elem_size);
+            init();
         }
     
+        virtual void init() = 0;
+        virtual ~MatrixBase() {}
+
     protected:
         std::string name;
         int w;
@@ -197,16 +201,19 @@ class Matrix : public MatrixBase {
                 w = width;
                 h = height;
                 elem_size = sizeof(T); 
-                mem = new char[w * h * elem_size];
-                std::memset(mem, 0, w * h * elem_size);
+                elems = new T[w * h];
+                std::memset(elems, 0, w * h * elem_size);
+                mem = (char*)elems;
             }
         }
-        ~Matrix() { delete[] mem; }
-        T* begin() const { return (T*)mem; }
-        T* end() const { return (T*)mem + w * h; }
-        inline T& get(short x, short y) { return *((T*)mem + y * w + x); }
+        void init() { elems = (T*)mem; }
+        ~Matrix() { delete[] elems; }
+        T* begin() const { return elems; }
+        T* end() const { return elems + w * h; }
+        inline T& get(short x, short y) { return elems[y * w + x]; }
         int width() { return w; }
         int height() { return h; }
+        T* elems;
 };
 
 class Database {

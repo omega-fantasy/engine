@@ -144,9 +144,9 @@ class MapGen {
             char temp;
         };
 
-        static void randomize_map(Matrix<Texture::ID>* tiles_ground, Matrix<Texture::ID>* tiles_above) {
+        static void randomize_map() {
             auto map = Engine.map();
-            Size map_size = {tiles_ground->width(), tiles_ground->height()};
+            Size map_size = map->tilemap_size();
             Size tile_dim = map->tile_size();
 
             Config config;
@@ -155,7 +155,7 @@ class MapGen {
             int max_samples = cell_size.w * cell_size.h * config.sample_factor; // 3
             int sample_dist = config.sample_distance; // 2
             
-            Matrix<unsigned char>* heightmap = Engine.db()->get_matrix<unsigned char>("heightmap", map_size.w, map_size.h);
+            Matrix<unsigned char>* heightmap = new Matrix<unsigned char>("heightmap", map_size.w, map_size.h);
             Config::Biome& mountain_biome = config.elevations.back().biomes[0];
             unsigned char max_height = mountain_biome.max_height - 1;
             double height_cutoff = 1 - config.elevations.back().perc;
@@ -180,7 +180,7 @@ class MapGen {
                     ); 
                 }
             }
-            
+            /*
             for (short y_map = 0; y_map < map_size.h; y_map++) {
                 for (short x_map = 0; x_map < map_size.w; x_map++) {
                     tiles_ground->get(x_map, y_map) = 0;
@@ -188,6 +188,7 @@ class MapGen {
                     heightmap->get(x_map, y_map) = 0;
                 }
             }
+            */
             parallel_for(0, num_cells.h-1, [&](int y_cell) {
                 for (short x_cell = 0; x_cell < num_cells.w; x_cell++) {
                     Box sample_cells(Point(x_cell - sample_dist, y_cell - sample_dist), Point(x_cell + sample_dist, y_cell + sample_dist));
@@ -252,7 +253,7 @@ class MapGen {
                                         char height = max_height * (total_val - height_cutoff) / (1 - height_cutoff);
                                         heightmap->get(x_map, y_map) = height < 0 ? 0 : height;
                                     }
-                                    tiles_ground->get(x_map, y_map) = elevation.blocking ? -biome.id() : biome.id();
+                                    map->set_ground(biome.id(), {x_map, y_map}, elevation.blocking);
                                     double val = random_fast();
                                     current_val = 0;
                                     for (auto& item : biome.items) {
@@ -296,6 +297,7 @@ class MapGen {
             }
 
             post_process(config, map_size);
+            delete heightmap;
         }
 };
 

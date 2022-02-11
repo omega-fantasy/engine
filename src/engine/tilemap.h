@@ -17,10 +17,12 @@ class Tilemap : public Composite, Input::Listener {
         Tilemap(Size screen_size): Composite(screen_size) { MAX_NO_UPDATES = 10; }
         void create_map(Size screen_size);
 
+        bool set_ground(Texture::ID id, Point p, bool blocked);
         bool set_ground(const std::string& texture_name, Point p, bool blocked);
         bool set_tile(const std::string& texture_name, Point p); 
         bool set_tile(Texture::ID id, Point p, Size s);
         void unset_tile(Point pos);
+        Texture::ID get_ground(Point p);
 
         Point texture_root(Point p); 
         Box visible_tiles();
@@ -37,15 +39,13 @@ class Tilemap : public Composite, Input::Listener {
         void set_zoom(float z) { zoom = z; }
         void add_listener(Tilemap::Listener* l) { click_listeners.push_back(l); }
         void remove_listener(Tilemap::Listener* l) { click_listeners.erase(std::find(click_listeners.begin(), click_listeners.end(), l)); } 
-        Texture::ID get_ground(Point p) { Texture::ID id = tiles_ground->get(p.x, p.y); return id < 0 ? -id : id; }
     
     private:
         std::vector<Tilemap::Listener*> click_listeners;
         constexpr static double MAX_ZOOM = 4.0;
         constexpr static double MIN_ZOOM = 0.125;
         bool listener_registered = false;
-        Matrix<Texture::ID>* tiles_ground = nullptr;
-        Matrix<Texture::ID>* tiles_above = nullptr;
+        Matrix<unsigned>* tiles = nullptr;
         Size tile_dim = {0, 0};
         Size map_size = {0, 0};
         struct Camera {
@@ -63,10 +63,13 @@ class Tilemap : public Composite, Input::Listener {
         std::string cursor_texture;
         Point last_mouse_pos = {0, 0};
         bool infinite_scrolling = false;
+        Point move_vector = {0, 0};
+        bool use_fast_renderer = false;
 
         void mouse_clicked(Point p);
         void fix_camera();
         void draw();
+        void fast_render();
 };
 
 #endif

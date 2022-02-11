@@ -7,11 +7,26 @@ include_directories(. src)
 
 if (UNIX)
 
-target_link_options(engine PRIVATE -fuse-ld=gold -lSDL2 -lpthread
+target_link_options(engine PRIVATE -fuse-ld=gold -lSDL2 -lpthread -flto
     #-fsanitize=address,undefined,implicit-conversion
     #-fsanitize=thread
 )
-target_compile_options(engine PRIVATE -g3 -fno-omit-frame-pointer -O2 -std=c++17 -fno-exceptions -fno-rtti -Wpedantic -Wall -Wextra -Wno-missing-field-initializers
+target_compile_options(engine PRIVATE
+    -flto
+    -g3 
+    -fno-omit-frame-pointer
+    -march=native 
+    -Ofast
+    #-ffunction-sections
+    #-fdata-sections
+    -std=c++17 
+    -fno-exceptions 
+    -fno-rtti 
+    -Wpedantic 
+    -Wall 
+    -Wextra 
+    -Wno-missing-field-initializers
+    -Wno-class-memaccess
     #-fsanitize=address,undefined,implicit-conversion
     #-fsanitize=thread
 )

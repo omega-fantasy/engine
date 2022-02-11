@@ -11,15 +11,15 @@ class Texture {
         Texture(Size s, Color* pixels);
         Texture(Color color, Size s);
         virtual ~Texture();
-        inline Color* pixels(float zoom = 1.0f) {
-            if (zoom == 0.125f) return pixels_zoomout[3];
-            if (zoom == 0.25f) return pixels_zoomout[2];
-            if (zoom == 0.5f) return pixels_zoomout[1];
-            if (zoom == 1.0f) return pixels_og;
-            if (zoom == 2.0f) return pixels_zoomin[2];
-            if (zoom == 4.0f) return pixels_zoomin[4];
-            return nullptr;
+        static inline int zoom2idx(float zoom) {
+            if (zoom == 0.125f) return 0;
+            if (zoom == 0.25f) return 1;
+            if (zoom == 0.5f) return 2;
+            if (zoom == 1.0f) return 3;
+            if (zoom == 2.0f) return 4;
+            return 5;
         }
+        inline Color* pixels(float zoom = 1.0f) { return pixel_map[zoom2idx(zoom)]; }
         Size size(float zoom = 1) { return m_size * zoom; }
         bool transparent() { return hasTransparency; }
         void set_transparent(bool b) { hasTransparency = b; }   
@@ -27,11 +27,10 @@ class Texture {
 
     protected:
         friend class TextureManager;
+        friend class Tilemap;
         ID m_id = 0;
         Size m_size;
-        Color* pixels_og = nullptr;
-        std::vector<Color*> pixels_zoomin;
-        std::vector<Color*> pixels_zoomout;
+        Color* pixel_map[6] = {nullptr};
         bool hasTransparency = false;
         Color* load_scaled(float zoom);
 };
@@ -50,6 +49,7 @@ class TextureManager {
         void set_font(const std::string& path) { fontpath = path; }
 
     private:
+        friend class Tilemap;
         std::string fontpath;
         constexpr static char DELIMITER = '$';
         Texture* id_to_texture[15000] = {0};

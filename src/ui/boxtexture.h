@@ -7,7 +7,7 @@
 class BoxTexture : public Texture {
     public:
     BoxTexture(Size s, Color color1, Color color2, Color c_border): Texture(color1, s) {
-        Color* pixels = (Color*)pixels_og;
+        Color* pixels = (Color*)pixel_map[zoom2idx(1.0)];
         Point p1(0, 0);
         Point p2(s.w-1, s.h-1);
         int max_dist = s.w + s.h;

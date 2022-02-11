@@ -3,20 +3,19 @@
 #include "config.h"
 #include "db.h"
 
-Texture::Texture(Size s, Color* pixels): m_size(s), pixels_og(pixels) {
+Texture::Texture(Size s, Color* pixels): m_size(s) {
+    pixel_map[zoom2idx(1.0)] = pixels;
     hasTransparency = std::any_of(pixels, pixels+s.w*s.h, [](Color p){return p.alpha < 128;});
 }
         
-Texture::Texture(Color color, Size s):  m_size(s), pixels_og(new Color[s.w * s.h]) {
+Texture::Texture(Color color, Size s): m_size(s) {
+    pixel_map[zoom2idx(1.0)] = new Color[s.w * s.h];
+    Color* pixels_og = pixels();
     std::fill(pixels_og, pixels_og + s.w * s.h, int(color));
 }
 
 Texture::~Texture() {
-    delete[] pixels_og;
-    for (Color* t : pixels_zoomin) {
-        delete[] t;
-    }
-    for (Color* t : pixels_zoomout) {
+    for (Color* t : pixel_map) {
         delete[] t;
     }
 }
@@ -24,7 +23,7 @@ Texture::~Texture() {
 Color* Texture::load_scaled(float zoom) {
     int fact = (double)1 / zoom;
     int izoom = (int)zoom;
-    Color* src = pixels_og;
+    Color* src = pixels();
     Color* pixels = new Color[static_cast<int>(m_size.w * zoom * m_size.h * zoom)];
     for (int y = 0; y < m_size.h; y++) {
         for (int x = 0; x < m_size.w; x++) {
@@ -42,21 +41,7 @@ Color* Texture::load_scaled(float zoom) {
             }
         }
     }
-    if (zoom > 1) {
-        if (pixels_zoomin.size() < zoom+1) {
-            pixels_zoomin.resize(zoom+1);
-        }
-        pixels_zoomin[zoom] = pixels;
-    } else if (zoom < 1){
-        int idx = 0;
-        if (zoom == 0.125) idx = 3;
-        if (zoom == 0.25) idx = 2;
-        if (zoom == 0.5) idx = 1;
-        if ((int)pixels_zoomout.size() < idx+1) {
-            pixels_zoomout.resize(idx+1);
-        }
-        pixels_zoomout[idx] = pixels;
-    }
+    pixel_map[zoom2idx(zoom)] = pixels;
     return pixels;
 }
 
@@ -169,7 +154,12 @@ static Texture* generate_debris(Size s, Color, Color, Color, int size_clusters, 
     Color* img = new Color[s.w * s.h];
     for (int i = 0; i < num_clusters; i++) {
         Point cluster_center(random_uniform(size_clusters, s.w - 1 - size_clusters), random_uniform(size_clusters, s.h - 1 - size_clusters));
-        
+        for (int y = cluster_center.y - ; y < s.h; y++) {
+            for (int x = 0; x < s.w; x++) {
+
+            }
+        }
+ 
     }
 
     return new Texture(s, img);
@@ -217,7 +207,7 @@ void TextureManager::register_texture(const std::string& name, Texture* t) {
     name_to_texture[name] = t;
     Engine.db()->get_table<String<256>>("textures")->add(currentID, name);
     currentID++;
-    for (float z : {0.125, 0.25, 0.5, 1.0, 2.0, 4.0}) {
+    for (float z : {0.125, 0.25, 0.5, 2.0, 4.0}) {
         t->load_scaled(z);
     }
 }
