@@ -145,4 +145,34 @@ void decompress(void* in_data, int in_len, void* out_data, int out_len);
 
 void parallel_for(int begin, int end, const std::function<void(int)>& f);
 
+
+
+enum class ScriptType {NUMBER, STRING, LIST};
+
+struct ScriptParam {
+    using ScriptValue = std::variant<double, std::string, std::vector<ScriptParam>, std::map<std::string, ScriptParam>>;
+    ScriptParam(int i): val((double)i) {}
+    ScriptParam(double d): val(d) {}
+    ScriptParam(const std::vector<ScriptParam>& l): val(l) {}
+    ScriptParam(const ScriptValue& v): val(v) {}
+    double d() const { return std::get<0>(val); }
+    std::string s() const { return std::get<1>(val); }
+    std::vector<ScriptParam> l() const { return std::get<2>(val); }
+    ScriptValue val;
+};
+
+struct ScriptFunction {
+    ScriptFunction() {}
+    ScriptFunction(const std::string& n, const ScriptType& t_out, const std::vector<ScriptType>& t_in, const std::function<ScriptParam(const std::vector<ScriptParam>&)> f):
+    name(n), return_type(t_out), param_types(t_in), func(f)  {}
+    ScriptFunction(const ScriptFunction& other): name(other.name), return_type(other.return_type), param_types(other.param_types), func(other.func) {}
+    std::string name;
+    ScriptType return_type;
+    std::vector<ScriptType> param_types;
+    std::function<ScriptParam(const std::vector<ScriptParam>& params)> func;
+};
+
+void add_script_function(const ScriptFunction& function);
+void run_script(const std::string& filepath);
+
 #endif

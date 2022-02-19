@@ -5,7 +5,6 @@
 #include "ui/timewidget.h"
 #include "ui/minimap.h"
 #include "ui/commonui.h"
-#include "engine/scripting.h"
 
 class BackButton : public BasicButton {
     public:
@@ -112,13 +111,18 @@ class BenchmarkButton : public BasicButton {
 
 class TestScriptButton : public BasicButton, public MessageBox::Listener {
     public:
-        TestScriptButton(Size s): BasicButton(s, "Test Script") {}
+        TestScriptButton(Size s): BasicButton(s, "Test Script") {
+            Engine.register_script_function({"printbox", ScriptType::NUMBER, {ScriptType::STRING}, [&](const std::vector<ScriptParam>& params) {
+                script_out += params[0].s() + "\n";
+                return 0.0;
+            }});  
+        }
         void mouse_clicked(Point) {
-            Engine.audio()->play_sound("menu1");
-            Engine.script()->execute("./scripts/test.script");
+            script_out = "";
+            Engine.audio()->play_sound("menu1");           
             Size s = Engine.map()->get_size();
-            std::string text = "Test Script Output:\n \n" + Engine.script()->script_output();
-            auto messagebox = new MessageBox({1.0 * s.w, 1.0 * s.h}, text, this, 0.025);
+            run_script("./scripts/test.lua");
+            auto messagebox = new MessageBox({1.0 * s.w, 1.0 * s.h}, script_out, this, 0.025);
             Engine.map()->add_child(messagebox, {0.0 * s.w, 0.0 * s.h});
         }
 
@@ -126,6 +130,8 @@ class TestScriptButton : public BasicButton, public MessageBox::Listener {
             Engine.map()->remove_child(messagebox);
             delete messagebox;
         }
+
+        std::string script_out;
 };
 
 class NewButton : public BasicButton {

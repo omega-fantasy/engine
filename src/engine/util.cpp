@@ -427,3 +427,128 @@ void parallel_for(int begin, int end, const std::function<void(int)>& f) {
     }
     pool.wait();
 }
+
+
+
+extern "C"{
+#include "extern/lua/lua.h"
+#include "extern/lua/lauxlib.h"
+#include "extern/lua/lualib.h"
+}
+
+static lua_State* luastate = nullptr;
+static void lua_init() {
+    if (!luastate) {
+        luastate = luaL_newstate();
+        luaL_openlibs(luastate);
+    }
+}
+
+static std::map<std::string, ScriptFunction> lua_functions;
+
+static int parse_lua_args(lua_State* L, const ScriptFunction& function, std::vector<ScriptParam>& params, std::string& error) {
+    int num_expected_params = function.param_types.size();
+    if (lua_gettop(L) != num_expected_params) {
+        error = "in function " + function.name  + ", expected " + std::to_string(num_expected_params) + " parameters, but received " + std::to_string(lua_gettop(L));
+        return 0;
+    }
+    for (int i = 1; i <= num_expected_params; i++) {
+        switch (function.param_types[i-1]) {
+            case ScriptType::NUMBER: {
+                if (lua_isnumber(L, i)) {
+                    params.emplace_back(lua_tonumber(L, i));
+                } else {
+                    return 0;
+                    // Error
+                }
+                break;
+            }
+            case ScriptType::STRING: {
+                if (lua_isstring(L, i)) {
+                    params.emplace_back(lua_tostring(L, i));
+                } else {
+                    // Error
+                }
+                break;
+            }
+            case ScriptType::LIST: {
+                if (lua_istable(L, i)) {
+                    std::vector<ScriptParam> vec;
+                    /* table is in the stack at index 't' */
+                    lua_pushnil(L);  /* first key */
+                    while (lua_next(L, i) != 0) {
+                        vec.emplace_back(lua_tonumber(L, -2));
+                        /* uses 'key' (at index -2) and 'value' (at index -1) */
+                        //printf("%s - %s\n",
+                        //        lua_typename(L, lua_type(L, -2)),
+                        //        lua_typename(L, lua_type(L, -1)));
+                        /* removes 'value'; keeps 'key' for next iteration */
+                        lua_pop(L, 1);
+                    }
+                    params.emplace_back(vec);
+                } else {
+                    // Error
+                }
+                break;
+            }
+            default: 
+                break;
+        }
+    }
+    return 1;
+}
+
+static void return_lua_value(lua_State* L, const ScriptFunction& function, const ScriptParam& val) {
+    switch (function.return_type) {
+        case ScriptType::NUMBER: {
+            lua_pushnumber(L, val.d());
+            break;
+        }
+        case ScriptType::STRING: {
+            lua_pushstring(L, val.s().c_str());
+            break;
+        }
+        case ScriptType::LIST: {
+            lua_newtable(L);
+            int i = 1;
+            for (auto& v : val.l()) {
+                //lua_pushnumber(L, i++);
+                lua_pushnumber(L, v.d());
+                lua_seti(L, -2, i++);
+                //lua_settable(L, -3);
+            }
+            break;
+        }
+        default: 
+            break;
+    }
+}
+
+static int handle_lua_function(lua_State* L) {
+    lua_Debug debug;
+    if (lua_getstack(L, 0, &debug) && lua_getinfo(L, "n", &debug)) {
+        std::string fname(debug.name);
+        const auto& f = lua_functions[fname];
+        std::string error;
+        std::vector<ScriptParam> params;
+        if (parse_lua_args(L, f, params, error)) {
+            return_lua_value(L, f, f.func(params));
+            return 1;
+        }
+    }
+    // TODO: error
+    return -1;
+}
+
+void add_script_function(const ScriptFunction& function) {
+    lua_init();
+    lua_functions.emplace(function.name, std::move(function));
+    lua_register(luastate, function.name.c_str(), handle_lua_function);
+}
+
+void run_script(const std::string& filepath) {
+    lua_init();
+    if (luaL_dofile(luastate, filepath.c_str())) {
+        SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error in Lua script", lua_tostring(luastate, -1), window);
+    }
+}

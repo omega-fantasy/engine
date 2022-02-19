@@ -10,7 +10,6 @@ class Screen;
 class AudioPlayer;
 class Simulation;
 class ConfigParser;
-class Script;
 class ScenePlayer;
 
 #include "util.h"
@@ -24,6 +23,9 @@ class GameEngine {
         void save_state(const char* filename);
         void load_state(const char* filename);
 
+        void register_script_function(const ScriptFunction& function);
+        void execute_script(const std::string& filepath);
+
         Database* db() { return m_db; }
         Tilemap* map() { return m_map; }
         TextureManager* textures() { return m_textures; }
@@ -32,7 +34,6 @@ class GameEngine {
         AudioPlayer* audio() { return m_audio; }
         Simulation* sim() { return m_sim; }
         ConfigParser* config() { return m_config; }
-        Script* script() { return m_script; }
         ScenePlayer* scenes() { return m_scenes; }
 
     private:
@@ -44,7 +45,6 @@ class GameEngine {
         AudioPlayer* m_audio = nullptr;
         Simulation* m_sim = nullptr;
         ConfigParser* m_config = nullptr;
-        Script* m_script = nullptr;
         ScenePlayer* m_scenes = nullptr;
 };
 

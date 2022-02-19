@@ -1,1 +1,7 @@
-target_sources(engine PRIVATE engine.cpp tilemap.cpp util.cpp texture.cpp)
+target_sources(engine PRIVATE 
+    engine.cpp 
+    tilemap.cpp 
+    util.cpp 
+    texture.cpp 
+    extern/lua/onelua.c
+)

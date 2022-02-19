@@ -30,7 +30,8 @@ class SimulateButton : public BasicButton, public Composite::Listener, public Me
         virtual void fade_completed(Composite*) {
             if (first_dark) {
                 Engine.map()->set_zoom(1.0);
-                Engine.script()->execute("./scripts/profit.script");
+                Engine.execute_script("./scripts/profit.lua");
+                //Engine.script()->execute("./scripts/profit.script");
                 first_dark = false;
                 /*
                 Composite* map = Engine.map();

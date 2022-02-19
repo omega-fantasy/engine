@@ -3,34 +3,30 @@
 #include "simulate.h"
 #include "research.h"
 #include "system.h"
-#include "engine/scripting.h"
 
 GameSystem System;
 
 void GameSystem::init_script_api() {
-    auto script = Engine.script();
-    script->add_function("towns", {}, [&](Script::ParamList&){
-        std::vector<double>* ret = new std::vector<double>();
-        for (auto& t : System.buildings()->townlist()) { ret->push_back(t.second); }
+    Engine.register_script_function({"towns", ScriptType::LIST, {}, [&](const std::vector<ScriptParam>&) {
+        std::vector<ScriptParam> ret;
+        for (auto& t : System.buildings()->townlist()) { ret.emplace_back(t.second); }
         return ret;
-    });
-    script->add_function("buildings", {Script::Type::Number}, [&](Script::ParamList& params){
-        std::vector<double>* ret = new std::vector<double>();
-        for (auto& b : System.buildings()->buildinglist(Script::d(params[0]))) { ret->push_back(b); }
+    }});
+    Engine.register_script_function({"buildings", ScriptType::LIST, {ScriptType::NUMBER}, [&](const std::vector<ScriptParam>& params) {
+        std::vector<ScriptParam> ret;
+        for (auto& b : System.buildings()->buildinglist(params[0].d())) { ret.emplace_back(b); }
         return ret;
-    });
-    script->add_function("property_exists", {Script::Type::Number, Script::Type::String}, [&](Script::ParamList& params){
-        return System.buildings()->has_property(int(Script::d(params[0])), Script::s(params[1])) ? 1.0 : 0.0;
-    });
-    script->add_function("property_get", {Script::Type::Number, Script::Type::String}, [&](Script::ParamList& params){
-        return System.buildings()->get_property(int(Script::d(params[0])), Script::s(params[1]));
-    });
-    script->add_function("property_set", {Script::Type::Number, Script::Type::String, Script::Type::Number}, [&](Script::ParamList& params){
-        System.buildings()->set_property(int(Script::d(params[0])), Script::s(params[1]), Script::d(params[2])); return 0.0;
-    });
-    script->add_function("player_money_change", {Script::Type::Number}, [&](Script::ParamList& params){
-        System.player()->change_cash(Script::d(params[0])); return 0.0;
-    });  
+    }});
+    Engine.register_script_function({"property_exists", ScriptType::NUMBER, {ScriptType::NUMBER, ScriptType::STRING}, [&](const std::vector<ScriptParam>& params) {
+        return System.buildings()->has_property(int(params[0].d()), params[1].s()) ? 1.0 : 0.0;
+    }});
+    Engine.register_script_function({"property_get", ScriptType::NUMBER, {ScriptType::NUMBER, ScriptType::STRING}, [&](const std::vector<ScriptParam>& params) {
+        return System.buildings()->get_property(int(params[0].d()), params[1].s());
+    }});
+    Engine.register_script_function({"player_money_change", ScriptType::NUMBER, {ScriptType::NUMBER}, [&](const std::vector<ScriptParam>& params) {
+        System.player()->change_cash(params[0].d()); return 0;
+    }});  
+
 }
 
 void GameSystem::init() {

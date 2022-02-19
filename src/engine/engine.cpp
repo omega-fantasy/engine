@@ -8,14 +8,12 @@
 #include "audio.h"
 #include "sim.h"
 #include "config.h"
-#include "scripting.h"
 #include "scene.h"
 
 GameEngine Engine;
 
 GameEngine::GameEngine() {
     m_config = new ConfigParser();
-    m_script = new Script();
 }
 
 void GameEngine::init(Size screen_size) {
@@ -38,6 +36,10 @@ void GameEngine::load_state(const char* filename) {
     m_textures->reinit();
     m_map->create_map(m_map->get_size());
 }
+
+void GameEngine::register_script_function(const ScriptFunction& function) { add_script_function(function); }
+
+void GameEngine::execute_script(const std::string& filepath) { run_script(filepath); }
 
 void GameEngine::run() {
     while(1) {

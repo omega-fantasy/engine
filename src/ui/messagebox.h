@@ -29,6 +29,8 @@ class MessageBox : public BasicBox, public Input::Listener {
         }
     }
 
+    virtual void set_text(const std::string& s) { text->set_text(s, text_height_factor * size.h); }
+
     virtual ~MessageBox() {
         delete text;
         delete m_texture;
