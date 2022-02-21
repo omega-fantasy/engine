@@ -17,14 +17,15 @@ class MapScreen : public Composite, public Composite::Listener, public MessageBo
     class MapNavigate : public Input::Listener {
         public:
             MapNavigate() {
-                accel = std::stoi(Engine.config()->get("settings")["movespeed"]);
-                key_up = Engine.config()->get("settings")["keys"]["moveup"];
-                key_down = Engine.config()->get("settings")["keys"]["movedown"];
-                key_left = Engine.config()->get("settings")["keys"]["moveleft"];
-                key_right = Engine.config()->get("settings")["keys"]["moveright"];
-                key_zoomin = Engine.config()->get("settings")["keys"]["zoomin"];
-                key_zoomout = Engine.config()->get("settings")["keys"]["zoomout"];
-                key_quit = Engine.config()->get("settings")["keys"]["quit"];
+                auto& cfg = Engine.config("settings");
+                accel = cfg["movespeed"].i();
+                key_up = cfg["keys"]["moveup"].s();
+                key_down = cfg["keys"]["movedown"].s();
+                key_left = cfg["keys"]["moveleft"].s();
+                key_right = cfg["keys"]["moveright"].s();
+                key_zoomin = cfg["keys"]["zoomin"].s();
+                key_zoomout = cfg["keys"]["zoomout"].s();
+                key_quit = cfg["keys"]["quit"].s();
                 Engine.input()->add_key_listeners(this, {key_up, key_down, key_left, key_right});
                 Engine.input()->add_key_listeners(this, {key_zoomin, key_zoomout, key_quit});
             }

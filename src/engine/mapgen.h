@@ -3,7 +3,6 @@
 
 #include "engine.h"
 #include "db.h"
-#include "config.h"
 #include "texture.h"
 #include "tilemap.h"
 
@@ -55,27 +54,29 @@ class MapGen {
             };
             
             Config() {
-                auto& configfile = Engine.config()->get("mapgen");
-                for (auto& elevation : configfile["elevations"]) {
-                    elevations.emplace_back(std::stod(elevation["quantity"]), (bool)std::stoi(elevation["blocking"]), (bool)std::stoi(elevation["blend"]));
+                auto& configfile = Engine.config("mapgen");
+                for (auto& el : configfile["elevations"]) {
+                    auto& elevation = el.second;
+                    elevations.emplace_back(elevation["quantity"].d(), (bool)elevation["blocking"].i(), (bool)elevation["blend"].i());
                     auto& new_elevation = elevations.back();
-                    for (auto& biome : elevation["biomes"]) {
-                        new_elevation.biomes.emplace_back(biome["name"]);
-                        new_elevation.temperatures.push_back(std::stoi(biome["temperature_max"]));
+                    for (auto& bm : elevation["biomes"]) {
+                        auto& biome = bm.second;
+                        new_elevation.biomes.emplace_back(biome["name"].s());
+                        new_elevation.temperatures.push_back(biome["temperature_max"].i());
                         auto& new_biome = new_elevation.biomes.back();
                         if (biome.contains("name_wall")) {
-                            new_biome.name_wall = biome["name_wall"];
-                            new_biome.max_height = std::stoi(biome["max_height"]);
-                            new_biome.wall_height = std::stoi(biome["wall_height"]);
+                            new_biome.name_wall = biome["name_wall"].s();
+                            new_biome.max_height = biome["max_height"].i();
+                            new_biome.wall_height = biome["wall_height"].i();
                         }
                         for (auto& item : biome["vegetation"]) {
-                            new_biome.items.emplace_back(item["name"], std::stod(item["quantity"]));
+                            new_biome.items.emplace_back(item.second["name"].s(), item.second["quantity"].d());
                         }
                     }
                 }
-                num_cells = std::stoi(configfile["num_cells"]);
-                sample_factor = std::stoi(configfile["sample_factor"]);
-                sample_distance = std::stoi(configfile["sample_distance"]);
+                num_cells = configfile["num_cells"].i();
+                sample_factor = configfile["sample_factor"].i();
+                sample_distance = configfile["sample_distance"].i();
             }
             std::vector<Elevation> elevations;
             short num_cells = 0;

@@ -1,6 +1,5 @@
 #include "texture.h"
 #include "engine.h"
-#include "config.h"
 #include "db.h"
 
 Texture::Texture(Size s, Color* pixels): m_size(s) {
@@ -213,32 +212,29 @@ void TextureManager::register_texture(const std::string& name, Texture* t) {
 }
 
 void TextureManager::add_folder(const std::string& folder) {
-    auto& config = Engine.config()->get("textures");
-    for (auto& g : config["generate"]) {
-        Size s(std::stoi(Engine.config()->get("settings")["tilesize"]["width"]), std::stoi(Engine.config()->get("settings")["tilesize"]["height"]));
-        std::string type = g["type"];
+    for (auto& p : Engine.config("textures")) {
+        auto& g = p.second;
+        Size s(Engine.config("settings")["tilesize"]["width"].i(), Engine.config("settings")["tilesize"]["height"].i());
+        std::string type = g["type"].s();
         Texture* t = nullptr;
         if (type == "building") {
             std::vector<std::pair<std::string, Point>> objects;
             for (auto& object : g["objects"]) {
-                objects.emplace_back(object["name"], Point(std::stoi(object["x"]), std::stoi(object["y"])));
+                objects.emplace_back(object.second["name"].s(), Point(object.second["x"].i(), object.second["y"].i()));
             }
-            t = generate_building(s, Size(std::stoi(g["width"]), std::stoi(g["height"])), std::stoi(g["depth"]), g["facade"], g["roof"], objects);
+            t = generate_building(s, Size(g["width"].i(), g["height"].i()), g["depth"].i(), g["facade"].s(), g["roof"].s(), objects);
         } else if (type == "plant") {
-            Size size(s.w * std::stoi(g["width"]), s.h * std::stoi(g["height"]));
-            Color color_crown = (unsigned)std::stoul(g["color_crown"], nullptr, 0);
-            Color color_trunk = (unsigned)std::stoul(g["color_trunk"], nullptr, 0);
-            t = generate_plant(size, color_crown, color_trunk, std::stod(g["variance"]), std::stod(g["width_crown"]), std::stod(g["height_crown"]), std::stod(g["width_trunk"]), std::stod(g["height_trunk"])); 
+            Size size(s.w * g["width"].i(), s.h * g["height"].i());
+            t = generate_plant(size, g["color_crown"].c(), g["color_trunk"].c(), g["variance"].d(), g["width_crown"].d(), g["height_crown"].d(), g["width_trunk"].d(), g["height_trunk"].d()); 
         } else {
-            Color c(std::stoi(g["red"]), std::stoi(g["green"]), std::stoi(g["blue"]));
             if (type == "noise") {
-                t = generate_noise(s, c, std::stod(g["variance"]));
+                t = generate_noise(s, g["color"].c(), g["variance"].d());
             } else if (type == "tiled") {
-                t = generate_tiled(s, c, std::stod(g["variance"]), std::stoi(g["tiles_horizontal"]), std::stoi(g["tiles_vertical"]), std::stod(g["offset"]));
+                t = generate_tiled(s, g["color"].c(), g["variance"].d(), g["tiles_horizontal"].i(), g["tiles_vertical"].i(), g["offset"].d());
             } 
         }
         if (t) {
-            register_texture(g["name"], t);
+            register_texture(g["name"].s(), t);
         }
     }
     for (auto& filepath : filelist(folder, ".bmp")) {

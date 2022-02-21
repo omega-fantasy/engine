@@ -5,10 +5,9 @@
 #include "ui/mainmenu.h"
 
 int main() {
-    Engine.config()->add_folder("./config");
-    Size resolution(std::stoi(Engine.config()->get("settings")["resolution"]["width"]), std::stoi(Engine.config()->get("settings")["resolution"]["height"]));
-
-    Engine.init(resolution);
+    //Engine.config()->add_folder("./config");
+    Engine.init();
+    Size resolution(Engine.config("settings")["resolution"]["width"].i(), Engine.config("settings")["resolution"]["height"].i());
     Engine.textures()->add_folder("./res/textures");
     Engine.textures()->set_font("./res/mono.ttf");
     Engine.audio()->add_sound_folder("./res/sounds");

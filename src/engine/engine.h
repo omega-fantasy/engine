@@ -9,7 +9,6 @@ class Input;
 class Screen;
 class AudioPlayer;
 class Simulation;
-class ConfigParser;
 class ScenePlayer;
 
 #include "util.h"
@@ -17,7 +16,7 @@ class ScenePlayer;
 class GameEngine {
     public:
         GameEngine();
-        void init(Size screen_size);
+        void init();
         void run();
 
         void save_state(const char* filename);
@@ -33,8 +32,8 @@ class GameEngine {
         Screen* screen() { return m_screen; }
         AudioPlayer* audio() { return m_audio; }
         Simulation* sim() { return m_sim; }
-        ConfigParser* config() { return m_config; }
         ScenePlayer* scenes() { return m_scenes; }
+        ScriptParam& config(const std::string& name) { return m_configs[name]; }
 
     private:
         Input* m_input = nullptr;
@@ -44,8 +43,8 @@ class GameEngine {
         TextureManager* m_textures = nullptr;
         AudioPlayer* m_audio = nullptr;
         Simulation* m_sim = nullptr;
-        ConfigParser* m_config = nullptr;
         ScenePlayer* m_scenes = nullptr;
+        std::map<std::string, ScriptParam> m_configs;
 };
 
 extern GameEngine Engine;

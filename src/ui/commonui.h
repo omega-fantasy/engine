@@ -4,7 +4,6 @@
 #include "engine/engine.h"
 #include "engine/ui.h"
 #include "engine/audio.h"
-#include "engine/config.h"
 #include "engine/input.h"
 #include "engine/tilemap.h"
 #include "ui/boxtexture.h"
@@ -12,7 +11,7 @@
 class BasicBox : public Composite {
     public:
     BasicBox(Size s): Composite(s) {
-        auto& cfg = Engine.config()->get("settings")["colors"];
+        auto& cfg = Engine.config("settings")["colors"];
         m_texture = new BoxTexture(size, cfg["box_topleft"].c(), cfg["box_bottomright"].c(), cfg["box_border"].c());
     }
     virtual ~BasicBox() {}
@@ -47,7 +46,7 @@ class BasicButton : public Button {
         m_texture = nullptr;
     }
     virtual void init() {
-        auto& cfg = Engine.config()->get("settings")["colors"];
+        auto& cfg = Engine.config("settings")["colors"];
         texture_default = new BoxTexture(size, cfg["button_topleft"].c(), cfg["button_bottomright"].c(), cfg["button_border"].c());
         texture_selected = new BoxTexture(size, cfg["button_selected"].c(), cfg["button_selected"].c(), cfg["button_border"].c());
         set_selected(false);

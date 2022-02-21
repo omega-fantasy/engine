@@ -446,6 +446,28 @@ static void lua_init() {
 
 static std::map<std::string, ScriptFunction> lua_functions;
 
+
+static ScriptParam parse_recursive(lua_State* L, int param_pos = 1) {
+    if (lua_isnumber(L, param_pos)) {
+        double d = lua_tonumber(L, param_pos);
+        return d;
+    } else if (lua_isstring(L, param_pos)) {
+        std::string s = lua_tostring(L, param_pos);
+        return s;
+    } else if (lua_istable(L, param_pos)) {
+        std::map<ScriptParam, ScriptParam> ret;
+        lua_pushnil(L);
+        if (param_pos < 0) param_pos--;
+        while (lua_next(L, param_pos)) {
+            auto key = parse_recursive(L, -2);
+            ret[key] = parse_recursive(L, -1);
+            lua_pop(L, 1);
+        }
+        return ret;
+    }
+    return 0.0;     
+}
+
 static int parse_lua_args(lua_State* L, const ScriptFunction& function, std::vector<ScriptParam>& params, std::string& error) {
     int num_expected_params = function.param_types.size();
     if (lua_gettop(L) != num_expected_params) {
@@ -453,47 +475,7 @@ static int parse_lua_args(lua_State* L, const ScriptFunction& function, std::vec
         return 0;
     }
     for (int i = 1; i <= num_expected_params; i++) {
-        switch (function.param_types[i-1]) {
-            case ScriptType::NUMBER: {
-                if (lua_isnumber(L, i)) {
-                    params.emplace_back(lua_tonumber(L, i));
-                } else {
-                    return 0;
-                    // Error
-                }
-                break;
-            }
-            case ScriptType::STRING: {
-                if (lua_isstring(L, i)) {
-                    params.emplace_back(lua_tostring(L, i));
-                } else {
-                    // Error
-                }
-                break;
-            }
-            case ScriptType::LIST: {
-                if (lua_istable(L, i)) {
-                    std::vector<ScriptParam> vec;
-                    /* table is in the stack at index 't' */
-                    lua_pushnil(L);  /* first key */
-                    while (lua_next(L, i) != 0) {
-                        vec.emplace_back(lua_tonumber(L, -2));
-                        /* uses 'key' (at index -2) and 'value' (at index -1) */
-                        //printf("%s - %s\n",
-                        //        lua_typename(L, lua_type(L, -2)),
-                        //        lua_typename(L, lua_type(L, -1)));
-                        /* removes 'value'; keeps 'key' for next iteration */
-                        lua_pop(L, 1);
-                    }
-                    params.emplace_back(vec);
-                } else {
-                    // Error
-                }
-                break;
-            }
-            default: 
-                break;
-        }
+        params.emplace_back(parse_recursive(L, i));
     }
     return 1;
 }
@@ -508,12 +490,12 @@ static void return_lua_value(lua_State* L, const ScriptFunction& function, const
             lua_pushstring(L, val.s().c_str());
             break;
         }
-        case ScriptType::LIST: {
+        case ScriptType::TABLE: {
             lua_newtable(L);
             int i = 1;
-            for (auto& v : val.l()) {
+            for (auto& v : val.t()) {
                 //lua_pushnumber(L, i++);
-                lua_pushnumber(L, v.d());
+                lua_pushnumber(L, v.second.d());
                 lua_seti(L, -2, i++);
                 //lua_settable(L, -3);
             }

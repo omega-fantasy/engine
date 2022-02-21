@@ -1,5 +1,4 @@
 #include "tilemap.h"
-#include "config.h"
 #include "mapgen.h"
 
 #define groundid_get(x, y) (Texture::ID)(tiles->get(x, y) & 0x0000FFFF)
@@ -9,12 +8,13 @@
 
 
 void Tilemap::create_map(Size screen_size) {
-    map_size = {Engine.config()->get("settings")["mapsize"]["width"].i(), Engine.config()->get("settings")["mapsize"]["height"].i()};
-    tile_dim = {Engine.config()->get("settings")["tilesize"]["width"].i(), Engine.config()->get("settings")["tilesize"]["height"].i()};
+    auto& settings = Engine.config("settings");
+    map_size = {settings["mapsize"]["width"].i(), settings["mapsize"]["height"].i()};
+    tile_dim = {settings["tilesize"]["width"].i(), settings["tilesize"]["height"].i()};
     size = screen_size;
     tiles = Engine.db()->get_matrix<unsigned>("tiles", map_size.w, map_size.h);
-    infinite_scrolling = Engine.config()->get("settings")["infinite_scrolling"].i();
-    use_fast_renderer = (bool)(Engine.config()->get("settings")["use_fast_renderer"].i());
+    infinite_scrolling = settings["infinite_scrolling"].i();
+    use_fast_renderer = (bool)(settings["use_fast_renderer"].i());
     for (auto& listener : click_listeners) {
         listener->map_changed();
     }

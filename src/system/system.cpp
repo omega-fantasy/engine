@@ -7,14 +7,14 @@
 GameSystem System;
 
 void GameSystem::init_script_api() {
-    Engine.register_script_function({"towns", ScriptType::LIST, {}, [&](const std::vector<ScriptParam>&) {
-        std::vector<ScriptParam> ret;
-        for (auto& t : System.buildings()->townlist()) { ret.emplace_back(t.second); }
+    Engine.register_script_function({"towns", ScriptType::TABLE, {}, [&](const std::vector<ScriptParam>&) {
+        std::map<ScriptParam, ScriptParam> ret; int i = 1;
+        for (auto& t : System.buildings()->townlist()) { ret[i++] = t.second; }
         return ret;
     }});
-    Engine.register_script_function({"buildings", ScriptType::LIST, {ScriptType::NUMBER}, [&](const std::vector<ScriptParam>& params) {
-        std::vector<ScriptParam> ret;
-        for (auto& b : System.buildings()->buildinglist(params[0].d())) { ret.emplace_back(b); }
+    Engine.register_script_function({"buildings", ScriptType::TABLE, {ScriptType::NUMBER}, [&](const std::vector<ScriptParam>& params) {
+        std::map<ScriptParam, ScriptParam> ret; int i = 1;
+        for (auto& b : System.buildings()->buildinglist(params[0].d())) { ret[i++] = b; }
         return ret;
     }});
     Engine.register_script_function({"property_exists", ScriptType::NUMBER, {ScriptType::NUMBER, ScriptType::STRING}, [&](const std::vector<ScriptParam>& params) {

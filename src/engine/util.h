@@ -147,17 +147,30 @@ void parallel_for(int begin, int end, const std::function<void(int)>& f);
 
 
 
-enum class ScriptType {NUMBER, STRING, LIST};
+// Scripting Interface
+
+enum class ScriptType {NUMBER, STRING, TABLE};
 
 struct ScriptParam {
-    using ScriptValue = std::variant<double, std::string, std::vector<ScriptParam>, std::map<std::string, ScriptParam>>;
+    bool operator <(const ScriptParam& rhs) const { return val < rhs.val; }
+    using ScriptValue = std::variant<double, std::string, std::map<ScriptParam, ScriptParam>>;
+    ScriptParam() {}
+    ScriptParam(Point p): val(double(int(p))) {}
     ScriptParam(int i): val((double)i) {}
     ScriptParam(double d): val(d) {}
-    ScriptParam(const std::vector<ScriptParam>& l): val(l) {}
+    ScriptParam(const std::string& s): val(s) {}
+    ScriptParam(const char* c): val(c) {}
+    ScriptParam(const std::map<ScriptParam, ScriptParam>& t): val(t) {}
     ScriptParam(const ScriptValue& v): val(v) {}
     double d() const { return std::get<0>(val); }
+    int i() const { return (int)std::get<0>(val); }
+    Color c() const { return Color((unsigned)std::get<0>(val));}
     std::string s() const { return std::get<1>(val); }
-    std::vector<ScriptParam> l() const { return std::get<2>(val); }
+    std::map<ScriptParam, ScriptParam> t() const { return std::get<2>(val); }
+    auto begin() { return std::get<2>(val).begin(); }
+    auto end() { return std::get<2>(val).end(); }
+    ScriptParam& operator[](const std::string& key) { return std::get<2>(val)[key];}
+    bool contains(const std::string& s) { return std::get<2>(val).find(s) != end(); }
     ScriptValue val;
 };
 

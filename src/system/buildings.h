@@ -42,13 +42,14 @@ class Buildings {
         };
     
         Buildings() {
-            for (auto& t : Engine.config()->get("buildings")["buildings"]) {
-                m_types[t["name"]] = Type(t["name"], t["price"].i());
-                for (auto& p : t["properties"].map()) {
-                    m_types[t["name"]].properties[p.first] = p.second.d(); 
+            for (auto& p : Engine.config("buildings")["buildings"]) {
+                auto& t = p.second;
+                m_types[t["name"].s()] = Type(t["name"].s(), t["price"].i());
+                for (auto& p : t["properties"]) {
+                    m_types[t["name"].s()].properties[p.first.s()] = p.second.d(); 
                 }
             }
-            max_town_distance = Engine.config()->get("buildings")["max_town_distance"].i();
+            max_town_distance = Engine.config("buildings")["max_town_distance"].i();
         }
 
         virtual ~Buildings() {}

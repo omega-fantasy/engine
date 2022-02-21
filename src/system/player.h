@@ -2,7 +2,6 @@
 #define PLAYER_H
 
 #include "engine/db.h"
-#include "engine/config.h"
 #include "engine/engine.h"
 
 class Player {
@@ -14,7 +13,7 @@ class Player {
     public:
     Player() {
         auto table = Engine.db()->get_table<Entity>("player");
-        int startmoney = std::stoi(Engine.config()->get("buildings")["startmoney"]);
+        int startmoney = Engine.config("buildings")["startmoney"].i();
         if (!table->exists(0)) {
             table->add(0);
         }

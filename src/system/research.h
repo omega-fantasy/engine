@@ -2,7 +2,6 @@
 #define RESEARCH_H
 
 #include "engine/db.h"
-#include "engine/config.h"
 #include "engine/engine.h"
 
 class Research {
@@ -13,12 +12,13 @@ class Research {
         int i = 0;
         auto table = Engine.db()->get_table<Entity>("research");
         if (!table->exists(i)) {
-            for (auto& item : Engine.config()->get("research")["items"]) {
+            for (auto& p : Engine.config("research")["items"]) {
+                auto& item = p.second;
                 auto& new_research = table->add(i++);
-                new_research.name = item["name"];
-                new_research.description = item["description"];
-                new_research.cost = std::stoi(item["cost"]);
-                new_research.max_progress = std::stoi(item["max_progress"]);
+                new_research.name = item["name"].s();
+                new_research.description = item["description"].s();
+                new_research.cost = item["cost"].i();
+                new_research.max_progress = item["max_progress"].i();
             }
         }
     }

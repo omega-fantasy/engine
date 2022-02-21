@@ -3,7 +3,6 @@
 
 #include "engine.h"
 #include "texture.h"
-#include "config.h"
 
 class Composite {
     public:
@@ -60,7 +59,7 @@ class Composite {
 class Screen : public Composite {
     public:
         Screen(Size sz): Composite(sz) {
-            bool fullscreen = std::stoi(Engine.config()->get("settings")["resolution"]["fullscreen"]);
+            bool fullscreen = (bool)Engine.config("settings")["resolution"]["fullscreen"].i();
             pixels = (int*)create_window(sz, fullscreen);
         }
 

@@ -7,19 +7,22 @@
 #include "engine.h"
 #include "audio.h"
 #include "sim.h"
-#include "config.h"
 #include "scene.h"
 
 GameEngine Engine;
 
-GameEngine::GameEngine() {
-    m_config = new ConfigParser();
-}
+GameEngine::GameEngine() {}
 
-void GameEngine::init(Size screen_size) {
+void GameEngine::init() {
+    Engine.register_script_function({"set_config", ScriptType::NUMBER, {ScriptType::STRING, ScriptType::TABLE}, [&](const std::vector<ScriptParam>& params) {
+        m_configs[params[0].s()] = params[1]; return 0.0;
+    }});
+    execute_script("scripts/config.lua");
+
+    Size resolution(m_configs["settings"]["resolution"]["width"].i(), m_configs["settings"]["resolution"]["height"].i());
     m_db = new Database("database");
     m_input = new Input();
-    m_screen = new Screen(screen_size);
+    m_screen = new Screen(resolution);
     m_audio = new AudioPlayer();
     m_textures = new TextureManager();
     m_map = new Tilemap({0, 0});
