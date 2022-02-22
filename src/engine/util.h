@@ -149,11 +149,13 @@ void parallel_for(int begin, int end, const std::function<void(int)>& f);
 
 // Scripting Interface
 
-enum class ScriptType {NUMBER, STRING, TABLE};
+enum class ScriptType {NUMBER, STRING, TABLE, CALLBACK};
+
+struct ScriptCallback;
 
 struct ScriptParam {
     bool operator <(const ScriptParam& rhs) const { return val < rhs.val; }
-    using ScriptValue = std::variant<double, std::string, std::map<ScriptParam, ScriptParam>>;
+    using ScriptValue = std::variant<double, std::string, std::map<ScriptParam, ScriptParam>, ScriptCallback*>;
     ScriptParam() {}
     ScriptParam(Point p): val(double(int(p))) {}
     ScriptParam(int i): val((double)i) {}
@@ -162,16 +164,25 @@ struct ScriptParam {
     ScriptParam(const char* c): val(c) {}
     ScriptParam(const std::map<ScriptParam, ScriptParam>& t): val(t) {}
     ScriptParam(const ScriptValue& v): val(v) {}
+    ScriptParam(ScriptValue&& v): val(std::move(v)) {}
     double d() const { return std::get<0>(val); }
     int i() const { return (int)std::get<0>(val); }
     Color c() const { return Color((unsigned)std::get<0>(val));}
     std::string s() const { return std::get<1>(val); }
-    std::map<ScriptParam, ScriptParam> t() const { return std::get<2>(val); }
+    std::map<ScriptParam, ScriptParam>& t() { return std::get<2>(val); }
+    ScriptCallback* cb() const { return std::get<3>(val); }
     auto begin() { return std::get<2>(val).begin(); }
     auto end() { return std::get<2>(val).end(); }
     ScriptParam& operator[](const std::string& key) { return std::get<2>(val)[key];}
     bool contains(const std::string& s) { return std::get<2>(val).find(s) != end(); }
     ScriptValue val;
+};
+
+struct ScriptCallback {
+    ScriptCallback(const std::string& n, const ScriptParam& p): fname(n), param(p) {}
+    const std::string fname;
+    ScriptParam param;
+    ScriptParam run();
 };
 
 struct ScriptFunction {

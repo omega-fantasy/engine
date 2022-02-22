@@ -1,6 +1,6 @@
 local settings = {
-    ["resolution"] = { ["width"] = 1600, ["height"] = 900 },
-    ["mapsize"] = { ["width"] = 4096, ["height"] = 4096 },
+    ["resolution"] = { ["width"] = 3000, ["height"] = 1500 },
+    ["mapsize"] = { ["width"] = 1024, ["height"] = 1024 },
     ["tilesize"] = { ["width"] = 16, ["height"] = 16 },
     ["movespeed"] = 20,
     ["infinite_scrolling"] = 1,

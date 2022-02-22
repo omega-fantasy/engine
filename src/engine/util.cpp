@@ -470,17 +470,25 @@ static ScriptParam parse_recursive(lua_State* L, int param_pos = 1) {
 
 static int parse_lua_args(lua_State* L, const ScriptFunction& function, std::vector<ScriptParam>& params, std::string& error) {
     int num_expected_params = function.param_types.size();
+    /*
     if (lua_gettop(L) != num_expected_params) {
         error = "in function " + function.name  + ", expected " + std::to_string(num_expected_params) + " parameters, but received " + std::to_string(lua_gettop(L));
         return 0;
     }
+    */
     for (int i = 1; i <= num_expected_params; i++) {
-        params.emplace_back(parse_recursive(L, i));
+        if (function.param_types[i-1] == ScriptType::CALLBACK) {
+            params.emplace_back(new ScriptCallback(parse_recursive(L, i).s(), parse_recursive(L, i+1).t()));
+            num_expected_params++;
+            i++;
+        } else {
+            params.emplace_back(parse_recursive(L, i));
+        }
     }
     return 1;
 }
 
-static void return_lua_value(lua_State* L, const ScriptFunction& function, const ScriptParam& val) {
+static void return_lua_value(lua_State* L, const ScriptFunction& function, ScriptParam val) {
     switch (function.return_type) {
         case ScriptType::NUMBER: {
             lua_pushnumber(L, val.d());
@@ -493,7 +501,7 @@ static void return_lua_value(lua_State* L, const ScriptFunction& function, const
         case ScriptType::TABLE: {
             lua_newtable(L);
             int i = 1;
-            for (auto& v : val.t()) {
+            for (auto& v : val) {
                 //lua_pushnumber(L, i++);
                 lua_pushnumber(L, v.second.d());
                 lua_seti(L, -2, i++);
@@ -533,4 +541,22 @@ void run_script(const std::string& filepath) {
     if (luaL_dofile(luastate, filepath.c_str())) {
         SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error in Lua script", lua_tostring(luastate, -1), window);
     }
+}
+
+ScriptParam ScriptCallback::run() {
+    static auto dummyfunc = ScriptFunction();
+    dummyfunc.param_types = {ScriptType::TABLE};
+    dummyfunc.return_type = ScriptType::TABLE;
+    lua_getglobal(luastate, fname.c_str());
+    return_lua_value(luastate, dummyfunc, param);
+    if (lua_pcall(luastate, 1, 1, 0)) {
+        SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error in Lua script", lua_tostring(luastate, -1), window);
+    }
+    std::vector<ScriptParam> params;
+    std::string error;
+    if (parse_lua_args(luastate, dummyfunc, params, error)) {
+        lua_pop(luastate, 1);
+        return params[0];
+    }
+    return -1;
 }

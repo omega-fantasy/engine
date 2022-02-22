@@ -165,7 +165,23 @@ class LoadButton : public BasicButton {
         }
 };
 
+
+class ScriptButton : public BasicButton {
+    public:
+        ScriptButton(Size s, const std::string& n, ScriptCallback* cb): BasicButton(s, n), callback(cb) {}
+        void mouse_clicked(Point) { callback->run(); }
+        ScriptCallback* callback = nullptr;
+};
+
+
 HUD::HUD(Size s): Composite(s) {
+    Engine.register_script_function({"HUD_add_button", ScriptType::NUMBER, {ScriptType::STRING, ScriptType::CALLBACK}, [&](const std::vector<ScriptParam>& params) {  
+        Size s(0.8 * size.w, 0.06 * size.h);
+        auto button = new ScriptButton(s, params[0].s(), params[1].cb());
+        int i = children.size() - 1;
+        add_child(button, {0.1 * size.w, (i+0.1) * 0.06 * size.h});
+        return 0.0;
+    }}); 
     m_texture = new BoxTexture(s, {0, 0, 170}, {0, 0, 32}, {200, 200, 200});
 }
 
