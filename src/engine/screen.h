@@ -63,6 +63,8 @@ class Screen : public Composite {
             pixels = (int*)create_window(sz, fullscreen);
         }
 
+        void init_script_api();
+
         void clear() {
             children.clear();
             std::memset(pixels, 0, sizeof(int) * size.w * size.h); 

@@ -449,11 +449,11 @@ static std::map<std::string, ScriptFunction> lua_functions;
 
 static ScriptParam parse_recursive(lua_State* L, int param_pos = 1) {
     if (lua_isnumber(L, param_pos)) {
-        double d = lua_tonumber(L, param_pos);
-        return d;
+        return lua_tonumber(L, param_pos);
     } else if (lua_isstring(L, param_pos)) {
-        std::string s = lua_tostring(L, param_pos);
-        return s;
+        return lua_tostring(L, param_pos);
+    } else if (lua_islightuserdata(L, param_pos)) {
+        return lua_touserdata(L, param_pos);
     } else if (lua_istable(L, param_pos)) {
         std::map<ScriptParam, ScriptParam> ret;
         lua_pushnil(L);
@@ -488,8 +488,8 @@ static int parse_lua_args(lua_State* L, const ScriptFunction& function, std::vec
     return 1;
 }
 
-static void return_lua_value(lua_State* L, const ScriptFunction& function, ScriptParam val) {
-    switch (function.return_type) {
+static void return_lua_value(lua_State* L, const ScriptParam& val) {
+    switch (val.type()) {
         case ScriptType::NUMBER: {
             lua_pushnumber(L, val.d());
             break;
@@ -498,14 +498,23 @@ static void return_lua_value(lua_State* L, const ScriptFunction& function, Scrip
             lua_pushstring(L, val.s().c_str());
             break;
         }
+        case ScriptType::HANDLE: {
+            lua_pushlightuserdata(L, val.p<void>());
+            break;
+        }
         case ScriptType::TABLE: {
             lua_newtable(L);
-            int i = 1;
             for (auto& v : val) {
-                //lua_pushnumber(L, i++);
-                lua_pushnumber(L, v.second.d());
-                lua_seti(L, -2, i++);
-                //lua_settable(L, -3);
+                if (v.second.type() == ScriptType::NUMBER) {
+                    lua_pushnumber(L, (int)v.second.d());
+                } else if (v.second.type() == ScriptType::STRING) {
+                    lua_pushstring(L, v.second.s().c_str());
+                }
+                if (v.first.type() == ScriptType::NUMBER) {
+                    lua_seti(L, -2, (int)v.first.d());
+                } else if (v.first.type() == ScriptType::STRING) {
+                    lua_setfield(L, -2, v.first.s().c_str());
+                }
             }
             break;
         }
@@ -522,7 +531,7 @@ static int handle_lua_function(lua_State* L) {
         std::string error;
         std::vector<ScriptParam> params;
         if (parse_lua_args(L, f, params, error)) {
-            return_lua_value(L, f, f.func(params));
+            return_lua_value(L, f.func(params));
             return 1;
         }
     }
@@ -546,17 +555,17 @@ void run_script(const std::string& filepath) {
 ScriptParam ScriptCallback::run() {
     static auto dummyfunc = ScriptFunction();
     dummyfunc.param_types = {ScriptType::TABLE};
-    dummyfunc.return_type = ScriptType::TABLE;
     lua_getglobal(luastate, fname.c_str());
-    return_lua_value(luastate, dummyfunc, param);
+    return_lua_value(luastate, param);
     if (lua_pcall(luastate, 1, 1, 0)) {
         SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error in Lua script", lua_tostring(luastate, -1), window);
-    }
-    std::vector<ScriptParam> params;
-    std::string error;
-    if (parse_lua_args(luastate, dummyfunc, params, error)) {
-        lua_pop(luastate, 1);
-        return params[0];
+    } else {
+        std::vector<ScriptParam> params;
+        std::string error;
+        if (parse_lua_args(luastate, dummyfunc, params, error)) {
+            lua_pop(luastate, 1);
+            return params[0];
+        }
     }
     return -1;
 }

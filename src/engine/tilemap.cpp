@@ -6,6 +6,44 @@
 #define aboveid_get(x, y) (Texture::ID)((tiles->get(x, y) & 0xFFFF0000) >> 16)
 #define aboveid_set(x, y, v) tiles->get(x, y) = (tiles->get(x, y) & 0x0000FFFF) | (unsigned)((((unsigned short)v) & 0x0000FFFF) << 16)
 
+class MapNavigation : public Input::Listener {
+    public:
+        MapNavigation() {
+            auto& cfg = Engine.config("settings");
+            accel = cfg["movespeed"].i();
+            key_up = cfg["keys"]["moveup"].s();
+            key_down = cfg["keys"]["movedown"].s();
+            key_left = cfg["keys"]["moveleft"].s();
+            key_right = cfg["keys"]["moveright"].s();
+            key_zoomin = cfg["keys"]["zoomin"].s();
+            key_zoomout = cfg["keys"]["zoomout"].s();
+            key_quit = cfg["keys"]["quit"].s();
+            Engine.input()->add_key_listeners(this, {key_up, key_down, key_left, key_right});
+            Engine.input()->add_key_listeners(this, {key_zoomin, key_zoomout, key_quit});
+        }
+
+        virtual void key_pressed(const std::string& key) {
+            if (key == key_up) {
+                Engine.map()->move_cam({0, -accel});
+            } else if (key == key_down) {
+                Engine.map()->move_cam({0, accel});
+            } else if (key == key_left) {
+                Engine.map()->move_cam({-accel, 0});
+            } else if (key == key_right) {
+                Engine.map()->move_cam({accel, 0});
+            } else if (key == key_zoomin) {
+                Engine.map()->zoom_cam(2);
+            } else if (key == key_zoomout) {
+                Engine.map()->zoom_cam(-2);
+            } else if (key == key_quit) {
+                exit(0);
+            }
+        }
+
+        int accel = 1;
+        std::string key_up, key_down, key_left, key_right, key_zoomin, key_zoomout, key_quit;
+};
+
 
 void Tilemap::create_map(Size screen_size) {
     auto& settings = Engine.config("settings");
@@ -18,6 +56,7 @@ void Tilemap::create_map(Size screen_size) {
     for (auto& listener : click_listeners) {
         listener->map_changed();
     }
+    new MapNavigation();
 }
 
 Texture::ID Tilemap::get_ground(Point p) { 
@@ -163,10 +202,10 @@ void Tilemap::mouse_clicked(Point p) {
 void Tilemap::fix_camera() {
     Camera camera_max = {(zoom * tile_dim.w) * map_size.w - size.w, (zoom * tile_dim.h) * map_size.h - size.h};
     if (infinite_scrolling) {
-        if (camera_pos.x < -camera_max.x) camera_pos.x += (camera_max.x + size.w);
-        if (camera_pos.y < -camera_max.y) camera_pos.y += (camera_max.y + size.h);
-        if (camera_pos.x >= 2 * camera_max.x) camera_pos.x -= (camera_max.x + size.w);
-        if (camera_pos.y >= 2 * camera_max.y) camera_pos.y -= (camera_max.y + size.h);
+        while (camera_pos.x <= -camera_max.x) camera_pos.x += (camera_max.x + size.w);
+        while (camera_pos.y <= -camera_max.y) camera_pos.y += (camera_max.y + size.h);
+        while (camera_pos.x >= 2 * camera_max.x) camera_pos.x -= (camera_max.x + size.w);
+        while (camera_pos.y >= 2 * camera_max.y) camera_pos.y -= (camera_max.y + size.h);
     } else {
         if (camera_pos.x < 0) camera_pos.x = 0;
         if (camera_pos.y < 0) camera_pos.y = 0;
@@ -241,7 +280,7 @@ void Tilemap::draw() {
 
 struct CachedTile {
     unsigned id = 0;
-    Color* pixels = 0;
+    unsigned* pixels = 0;
 };
 constexpr int CACHESIZE = 8;
 
@@ -309,7 +348,7 @@ void Tilemap::fast_render() {
             else if (x >= map_size_w) p_x %= map_size_w;
             const unsigned current_id = elems[p_x];
             int above_id = (short)((current_id & 0xFFFF0000) >> 16);
-            Color* __restrict ground_pixels = nullptr;
+            unsigned* __restrict ground_pixels = nullptr;
             int ground_size_w = tile_size_w;
 
             unsigned* __restrict screen_pixels = (unsigned*)(screen + start_x);   
@@ -321,7 +360,7 @@ void Tilemap::fast_render() {
                         above_id = 0;
                         break;
                     } else if (!cached_tiles[i].id && upper_bound_x == tile_size_w && upper_bound_y > tile_size_h) {
-                        cached_tiles[i].pixels = (Color*)(screen_pixels);
+                        cached_tiles[i].pixels = screen_pixels;
                         cached_tiles[i].id = current_id;
                         break;
                     }
@@ -329,7 +368,7 @@ void Tilemap::fast_render() {
             }
             if (!ground_pixels) {
                 const int ground_id = (short)(current_id & 0xFFFF);
-                ground_pixels = textures_map[ground_id < 0 ? -ground_id : ground_id]->pixel_map[zoom_level];
+                ground_pixels = (unsigned*)textures_map[ground_id < 0 ? -ground_id : ground_id]->pixel_map[zoom_level];
             }
             unsigned* __restrict texture_pixels = (unsigned*)(ground_pixels + texture_start_y * ground_size_w + texture_start_x); 
 
@@ -337,7 +376,7 @@ void Tilemap::fast_render() {
                 Texture* above_texture = textures_map[above_id < 0 ? -above_id : above_id];
                 const int above_size_w = above_texture->m_size.w * zoom;
                 const int above_size_h = above_texture->m_size.h * zoom;
-                Color* __restrict above_pixels = above_texture->pixel_map[zoom_level] + texture_start_y * above_size_w + texture_start_x;
+                unsigned* __restrict above_pixels = (unsigned*)above_texture->pixel_map[zoom_level] + texture_start_y * above_size_w + texture_start_x;
                 if (above_id < 0) {
                     for (int y = p_y; y > p_y - above_size_h / tile_size_h; y--) { 
                         for (int x = p_x; x > p_x - above_size_w / tile_size_w ; x--) {

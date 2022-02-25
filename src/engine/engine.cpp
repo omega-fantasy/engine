@@ -14,10 +14,9 @@ GameEngine Engine;
 GameEngine::GameEngine() {}
 
 void GameEngine::init() {
-    Engine.register_script_function({"set_config", ScriptType::NUMBER, {ScriptType::STRING, ScriptType::TABLE}, [&](const std::vector<ScriptParam>& params) {
-        m_configs[params[0].s()] = params[1]; return 0.0;
-    }});
+    Engine.register_script_function({"set_config", {ScriptType::STRING, ScriptType::TABLE}, [&](const std::vector<ScriptParam>& params) { m_configs[params[0].s()] = params[1]; return 0; }});
     execute_script("scripts/config.lua");
+    Engine.register_script_function({"Engine_load_state", {ScriptType::STRING}, [&](const std::vector<ScriptParam>& params) { load_state(params[0].s()); return 0; }});
 
     Size resolution(m_configs["settings"]["resolution"]["width"].i(), m_configs["settings"]["resolution"]["height"].i());
     m_db = new Database("database");
@@ -28,16 +27,20 @@ void GameEngine::init() {
     m_map = new Tilemap({0, 0});
     m_sim = new Simulation();
     m_scenes = new ScenePlayer();
+
+    m_screen->init_script_api();
 }
         
-void GameEngine::save_state(const char* filename) {
+void GameEngine::save_state(const std::string& filename) {
     m_db->write(filename);
 }
  
-void GameEngine::load_state(const char* filename) {
-    m_db->read(filename);
-    m_textures->reinit();
-    m_map->create_map(m_map->get_size());
+void GameEngine::load_state(const std::string& filename) {
+    if (file_exists("state.sav")) {
+        m_db->read(filename);
+        m_textures->reinit();
+        m_map->create_map(m_map->get_size());
+    }
 }
 
 void GameEngine::register_script_function(const ScriptFunction& function) { add_script_function(function); }

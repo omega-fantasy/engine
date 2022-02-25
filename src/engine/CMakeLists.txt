@@ -4,4 +4,5 @@ target_sources(engine PRIVATE
     util.cpp 
     texture.cpp 
     extern/lua/onelua.c
+    ui.cpp
 )

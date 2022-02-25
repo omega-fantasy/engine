@@ -112,7 +112,7 @@ class BenchmarkButton : public BasicButton {
 class TestScriptButton : public BasicButton, public MessageBox::Listener {
     public:
         TestScriptButton(Size s): BasicButton(s, "Test Script") {
-            Engine.register_script_function({"printbox", ScriptType::NUMBER, {ScriptType::STRING}, [&](const std::vector<ScriptParam>& params) {
+            Engine.register_script_function({"printbox", {ScriptType::STRING}, [&](const std::vector<ScriptParam>& params) {
                 script_out += params[0].s() + "\n";
                 return 0.0;
             }});  
@@ -175,7 +175,7 @@ class ScriptButton : public BasicButton {
 
 
 HUD::HUD(Size s): Composite(s) {
-    Engine.register_script_function({"HUD_add_button", ScriptType::NUMBER, {ScriptType::STRING, ScriptType::CALLBACK}, [&](const std::vector<ScriptParam>& params) {  
+    Engine.register_script_function({"HUD_add_button", {ScriptType::STRING, ScriptType::CALLBACK}, [&](const std::vector<ScriptParam>& params) {  
         Size s(0.8 * size.w, 0.06 * size.h);
         auto button = new ScriptButton(s, params[0].s(), params[1].cb());
         int i = children.size() - 1;

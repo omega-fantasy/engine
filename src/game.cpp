@@ -14,8 +14,9 @@ int main() {
     //Engine.audio()->add_music_folder("./res/music");
     //Engine.audio()->play_music("music", 20);
     System.init();
-    MainMenu* mm = new MainMenu({0.5 * resolution.w, 0.5 * resolution.h});
-    Engine.screen()->add_child(mm, {0.25 * resolution.w, 0.25 * resolution.h});
+    Engine.execute_script("scripts/mainmenu.lua");
+    //MainMenu* mm = new MainMenu({0.5 * resolution.w, 0.5 * resolution.h});
+    //Engine.screen()->add_child(mm, {0.25 * resolution.w, 0.25 * resolution.h});
     Engine.run();
     return 0;
 }

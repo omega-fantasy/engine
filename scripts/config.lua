@@ -1,10 +1,10 @@
 local settings = {
-    ["resolution"] = { ["width"] = 3000, ["height"] = 1500 },
+    ["resolution"] = { ["width"] = 3000, ["height"] = 1500, ["fullscreen"] = 0 },
     ["mapsize"] = { ["width"] = 1024, ["height"] = 1024 },
     ["tilesize"] = { ["width"] = 16, ["height"] = 16 },
     ["movespeed"] = 20,
     ["infinite_scrolling"] = 1,
-    ["use_fast_renderer"] = 0,
+    ["use_fast_renderer"] = 1,
     ["keys"] = {
         ["moveup"] = "Up",
         ["movedown"] = "Down",

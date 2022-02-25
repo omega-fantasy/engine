@@ -149,32 +149,42 @@ void parallel_for(int begin, int end, const std::function<void(int)>& f);
 
 // Scripting Interface
 
-enum class ScriptType {NUMBER, STRING, TABLE, CALLBACK};
+enum class ScriptType {NUMBER, STRING, TABLE, CALLBACK, HANDLE};
 
 struct ScriptCallback;
 
 struct ScriptParam {
     bool operator <(const ScriptParam& rhs) const { return val < rhs.val; }
-    using ScriptValue = std::variant<double, std::string, std::map<ScriptParam, ScriptParam>, ScriptCallback*>;
+    using ScriptValue = std::variant<double, std::string, std::map<ScriptParam, ScriptParam>, ScriptCallback*, void*>;
     ScriptParam() {}
     ScriptParam(Point p): val(double(int(p))) {}
     ScriptParam(int i): val((double)i) {}
     ScriptParam(double d): val(d) {}
     ScriptParam(const std::string& s): val(s) {}
-    ScriptParam(const char* c): val(c) {}
+    ScriptParam(const char* c): val(std::string(c)) {}
     ScriptParam(const std::map<ScriptParam, ScriptParam>& t): val(t) {}
+    ScriptParam(ScriptCallback* cb): val(cb) {}
+    ScriptParam(void* p): val(p) {}
     ScriptParam(const ScriptValue& v): val(v) {}
     ScriptParam(ScriptValue&& v): val(std::move(v)) {}
     double d() const { return std::get<0>(val); }
     int i() const { return (int)std::get<0>(val); }
     Color c() const { return Color((unsigned)std::get<0>(val));}
     std::string s() const { return std::get<1>(val); }
-    std::map<ScriptParam, ScriptParam>& t() { return std::get<2>(val); }
+    const std::map<ScriptParam, ScriptParam>& t() const { return std::get<2>(val); }
     ScriptCallback* cb() const { return std::get<3>(val); }
-    auto begin() { return std::get<2>(val).begin(); }
-    auto end() { return std::get<2>(val).end(); }
-    ScriptParam& operator[](const std::string& key) { return std::get<2>(val)[key];}
-    bool contains(const std::string& s) { return std::get<2>(val).find(s) != end(); }
+    template <typename T> T* p() const { return (T*)std::get<4>(val); }
+    auto begin() const { return std::get<2>(val).begin(); }
+    auto end() const { return std::get<2>(val).end(); }
+    const ScriptParam& operator[](const std::string& key) const { return std::get<2>(val).find(key)->second; }
+    bool contains(const std::string& s) const { return std::get<2>(val).find(s) != end(); }
+    ScriptType type() const {
+        if (std::holds_alternative<double>(val)) return ScriptType::NUMBER;
+        else if (std::holds_alternative<std::string>(val)) return ScriptType::STRING;
+        else if (std::holds_alternative<std::map<ScriptParam, ScriptParam>>(val)) return ScriptType::TABLE;
+        else if (std::holds_alternative<ScriptCallback*>(val)) return ScriptType::CALLBACK;
+        else return ScriptType::HANDLE;
+    }
     ScriptValue val;
 };
 
@@ -187,11 +197,10 @@ struct ScriptCallback {
 
 struct ScriptFunction {
     ScriptFunction() {}
-    ScriptFunction(const std::string& n, const ScriptType& t_out, const std::vector<ScriptType>& t_in, const std::function<ScriptParam(const std::vector<ScriptParam>&)> f):
-    name(n), return_type(t_out), param_types(t_in), func(f)  {}
-    ScriptFunction(const ScriptFunction& other): name(other.name), return_type(other.return_type), param_types(other.param_types), func(other.func) {}
+    ScriptFunction(const std::string& n, const std::vector<ScriptType>& t_in, const std::function<ScriptParam(const std::vector<ScriptParam>&)> f):
+    name(n), param_types(t_in), func(f)  {}
+    ScriptFunction(const ScriptFunction& other): name(other.name), param_types(other.param_types), func(other.func) {}
     std::string name;
-    ScriptType return_type;
     std::vector<ScriptType> param_types;
     std::function<ScriptParam(const std::vector<ScriptParam>& params)> func;
 };

@@ -19,8 +19,8 @@ class GameEngine {
         void init();
         void run();
 
-        void save_state(const char* filename);
-        void load_state(const char* filename);
+        void save_state(const std::string& filename);
+        void load_state(const std::string& filename);
 
         void register_script_function(const ScriptFunction& function);
         void execute_script(const std::string& filepath);

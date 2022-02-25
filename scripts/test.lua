@@ -13,8 +13,8 @@ printbox("square root of 2 is " .. tostring(l))
 
 function myfunction(t)
     print(t[1], t[2])
-    print("Hello World")
+    print("Hello Borld")
     return { 1, 2 }
 end
 
-HUD_add_button("mybutton", "myfunction", {15, 20})
+--HUD_add_button("myotherbutton", "myfunction", {15, 20})
